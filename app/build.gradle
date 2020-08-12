@@ -1,0 +1,79 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
+
+android {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.1"
+
+    defaultConfig {
+        applicationId "com.example.app"
+        minSdkVersion 21
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+
+        buildConfigField("String", "BASE_URL", "\"https://api-staging-1.getsquire.com/v1/\"")
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    viewBinding {
+        enabled = true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
+}
+
+ext {
+    versions = [
+            retrofit        : "2.8.1",
+            koin_version    : "2.1.5",
+    ]
+}
+
+dependencies {
+    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+
+    // Support Libraries
+    implementation "com.google.android.material:material:1.2.0"
+    implementation "androidx.constraintlayout:constraintlayout:2.0.0-rc1"
+
+    // UI
+    implementation 'com.github.bumptech.glide:glide:4.11.0'
+
+    // Network
+    implementation "com.squareup.retrofit2:retrofit:$versions.retrofit"
+    implementation "com.squareup.retrofit2:converter-gson:$versions.retrofit"
+    implementation "com.squareup.retrofit2:adapter-rxjava2:$versions.retrofit"
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.5.0'
+    implementation 'com.google.code.gson:gson:2.8.6'
+
+    // Frameworks
+    implementation 'io.reactivex.rxjava2:rxjava:2.2.12'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
+
+    // Utils
+    implementation 'com.jakewharton.timber:timber:4.7.1'
+
+    // Tests
+    testImplementation 'junit:junit:4.13'
+    testImplementation 'org.mockito:mockito-core:2.28.2'
+    testImplementation 'androidx.arch.core:core-testing:2.1.0'
+}
