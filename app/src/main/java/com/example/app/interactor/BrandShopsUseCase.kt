@@ -41,4 +41,6 @@ class BrandShopsUseCaseImpl(api: LocationsApi, private val choice: Observer<Int>
     }
 }
 
-class ShopChoiceSharer() : MemoryDataSharer<Int>()
+class ShopChoiceSharer() : MemoryDataSharer<Int>() {
+    override fun onNext(data: Int) = super.onNext(if (data == subject.value) -1 else data)
+}

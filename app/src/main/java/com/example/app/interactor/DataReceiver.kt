@@ -19,13 +19,13 @@ interface DataReceiver<D> {
  * @param <D> - data type
 </D> */
 abstract class MemoryDataSharer<D> : DataReceiver<D>, Observer<D> {
-    private var subject: BehaviorSubject<D> = BehaviorSubject.create()
+    internal var subject: BehaviorSubject<D> = BehaviorSubject.create()
 
     override fun get(): Observable<D> = subject
 
     override fun onSubscribe(d: Disposable) = subject.onSubscribe(d)
 
-    override fun onNext(d: D) = subject.onNext(d)
+    override fun onNext(data: D) = subject.onNext(data)
 
     override fun onError(e: Throwable) = with(subject) {
         subject = BehaviorSubject.create()
