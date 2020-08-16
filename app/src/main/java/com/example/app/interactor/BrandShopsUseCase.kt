@@ -9,10 +9,10 @@ import io.reactivex.schedulers.Schedulers
 
 interface BrandShopsUseCase {
     val brandShops: Single<List<Shop>>
-    fun selectShopAt(shop: Shop?): Completable
+    fun selectShopAt(selection: Int?): Completable
 }
 
-class BrandShopsUseCaseImpl(api: LocationsApi, private val choice: Observer<Shop>) :
+class BrandShopsUseCaseImpl(api: LocationsApi, private val choice: Observer<Int>) :
     BrandShopsUseCase {
 
     private var shops: List<Shop> = listOf()
@@ -24,21 +24,21 @@ class BrandShopsUseCaseImpl(api: LocationsApi, private val choice: Observer<Shop
             .observeOn(Schedulers.single())
             .doOnSuccess { shops = it }
             .doOnError { shops = listOf() }
-            .doAfterTerminate { choice.onComplete() }
+            .doAfterTerminate { choice.onNext(-1) }
             .cache()
     }
 
-    override fun selectShopAt(shop: Shop?) = Completable.fromCallable {
-        shop
+    override fun selectShopAt(selection: Int?) = Completable.fromCallable {
+        selection
             ?.let {
-                if (shops.contains(it)) {
+                if (shops.indices.contains(it)) {
                     choice.onNext(it)
                 } else {
-                    throw IndexOutOfBoundsException("There is no such selection: $shop")
+                    throw IndexOutOfBoundsException("There is no such index: $it")
                 }
             }
-            ?: choice.onComplete()
+            ?: choice.onNext(-1)
     }
 }
 
-class ShopChoiceSharer() : MemoryDataSharer<Shop>()
+class ShopChoiceSharer() : MemoryDataSharer<Int>()

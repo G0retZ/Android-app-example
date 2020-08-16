@@ -20,7 +20,7 @@ class BrandShopsUseCaseTest {
     private lateinit var api: LocationsApi
 
     @Mock
-    private lateinit var choiceReceiver: Observer<Shop>
+    private lateinit var choiceReceiver: Observer<Int>
 
     @Before
     fun setUp() {
@@ -110,7 +110,7 @@ class BrandShopsUseCaseTest {
         useCase.brandShops.test().isDisposed
 
         // Effect:
-        verify(choiceReceiver, Mockito.only()).onComplete()
+        verify(choiceReceiver, Mockito.only()).onNext(-1)
     }
 
     /**
@@ -139,7 +139,7 @@ class BrandShopsUseCaseTest {
         useCase.brandShops.test().isDisposed
 
         // Effect:
-        verify(choiceReceiver, Mockito.only()).onComplete()
+        verify(choiceReceiver, Mockito.only()).onNext(-1)
     }
 
     /**
@@ -166,12 +166,12 @@ class BrandShopsUseCaseTest {
 
         // Action:
         useCase.brandShops.test().isDisposed
-        useCase.selectShopAt(Shop(id = "3")).test().isDisposed
+        useCase.selectShopAt(3).test().isDisposed
 
         // Effect:
         val inOrder = Mockito.inOrder(choiceReceiver)
-        inOrder.verify(choiceReceiver).onComplete()
-        inOrder.verify(choiceReceiver).onNext(Shop(id = "3"))
+        inOrder.verify(choiceReceiver).onNext(-1)
+        inOrder.verify(choiceReceiver).onNext(3)
         Mockito.verifyNoMoreInteractions(choiceReceiver)
     }
 
@@ -202,7 +202,7 @@ class BrandShopsUseCaseTest {
         useCase.selectShopAt(null).test().isDisposed
 
         // Effect:
-        verify(choiceReceiver, Mockito.times(2)).onComplete()
+        verify(choiceReceiver, Mockito.times(2)).onNext(-1)
     }
 
     /**
@@ -229,11 +229,11 @@ class BrandShopsUseCaseTest {
 
         // Action:
         useCase.brandShops.test().isDisposed
-        useCase.selectShopAt(Shop(id = "-1")).test().isDisposed
-        useCase.selectShopAt(Shop(id = "7")).test().isDisposed
+        useCase.selectShopAt(-1).test().isDisposed
+        useCase.selectShopAt(7).test().isDisposed
 
         // Effect:
-        verify(choiceReceiver, Mockito.only()).onComplete()
+        verify(choiceReceiver, Mockito.only()).onNext(-1)
     }
 
     /* Check answers on selection */
@@ -261,7 +261,7 @@ class BrandShopsUseCaseTest {
 
         // Action:
         useCase.brandShops.test().isDisposed
-        val test = useCase.selectShopAt(Shop(id = "-1")).test()
+        val test = useCase.selectShopAt(-1).test()
 
         // Effect:
         test.assertError(IndexOutOfBoundsException::class.java)
@@ -291,7 +291,7 @@ class BrandShopsUseCaseTest {
 
         // Action:
         useCase.brandShops.test().isDisposed
-        val test = useCase.selectShopAt(Shop(id = "1")).test()
+        val test = useCase.selectShopAt(1).test()
         val test1 = useCase.selectShopAt(null).test()
 
         // Effect:
