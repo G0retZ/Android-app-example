@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.app.R
+import com.example.app.inject
 import com.example.app.presentation.ViewState
 import com.example.app.presentation.chooseshop.ChooseShopListItem
 import com.example.app.presentation.chooseshop.ChooseShopViewActions
@@ -25,6 +26,11 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
     lateinit var shopSelectionViewModel: ShopListSelectionViewModel
 
     private var hideAnimator: HideAnimator? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        inject(this)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
