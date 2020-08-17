@@ -2,6 +2,7 @@ package com.example.app
 
 import androidx.lifecycle.ViewModelProvider
 import com.example.app.interactor.BrandShopsUseCaseImpl
+import com.example.app.interactor.SelectedShopSharer
 import com.example.app.interactor.ShopChoiceSharer
 import com.example.app.presentation.ViewModelFactory
 import com.example.app.presentation.chooseshop.ChooseShopViewModel
@@ -74,6 +75,8 @@ val api: LocationsApi by lazy {
 
 val selectionSharer by lazy(::ShopChoiceSharer)
 
+val selectedShopSharer by lazy(::SelectedShopSharer)
+
 val brandShopsUseCase by lazy {
-    BrandShopsUseCaseImpl(api, selectionSharer)
+    BrandShopsUseCaseImpl(api, selectionSharer, selectedShopSharer)
 }

@@ -12,8 +12,11 @@ interface BrandShopsUseCase {
     fun selectShopAt(selection: Int?): Completable
 }
 
-class BrandShopsUseCaseImpl(api: LocationsApi, private val choice: Observer<Int>) :
-    BrandShopsUseCase {
+class BrandShopsUseCaseImpl(
+    api: LocationsApi,
+    private val choice: Observer<Int>,
+    private val selectedShop: Observer<Shop>
+) : BrandShopsUseCase {
 
     private var shops: List<Shop> = listOf()
 
@@ -24,23 +27,30 @@ class BrandShopsUseCaseImpl(api: LocationsApi, private val choice: Observer<Int>
             .observeOn(Schedulers.single())
             .doOnSuccess { shops = it }
             .doOnError { shops = listOf() }
-            .doAfterTerminate { choice.onNext(-1) }
+            .doAfterTerminate {
+                choice.onNext(-1)
+                selectedShop.onComplete()
+            }
             .cache()
     }
 
     override fun selectShopAt(selection: Int?) = Completable.fromCallable {
-        selection
-            ?.let {
-                if (shops.indices.contains(it)) {
-                    choice.onNext(it)
-                } else {
-                    throw IndexOutOfBoundsException("There is no such index: $it")
-                }
+        when {
+            selection == null -> {
+                choice.onNext(-1)
+                selectedShop.onComplete()
             }
-            ?: choice.onNext(-1)
+            shops.indices.contains(selection) -> {
+                choice.onNext(selection)
+                selectedShop.onNext(shops[selection])
+            }
+            else -> throw IndexOutOfBoundsException("There is no such index: $selection")
+        }
     }
 }
 
 class ShopChoiceSharer() : MemoryDataSharer<Int>() {
     override fun onNext(data: Int) = super.onNext(if (data == subject.value) -1 else data)
 }
+
+class SelectedShopSharer : MemoryDataSharer<Shop>()

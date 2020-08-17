@@ -20,12 +20,15 @@ class BrandShopsUseCaseTest {
     private lateinit var api: LocationsApi
 
     @Mock
-    private lateinit var choiceReceiver: Observer<Int>
+    private lateinit var choiceObserver: Observer<Int>
+
+    @Mock
+    private lateinit var selectedShopObserver: Observer<Shop>
 
     @Before
     fun setUp() {
         MockitoAnnotations.initMocks(this)
-        useCase = BrandShopsUseCaseImpl(api, choiceReceiver)
+        useCase = BrandShopsUseCaseImpl(api, choiceObserver, selectedShopObserver)
         Mockito.`when`(api.loadHome()).thenReturn(Single.never())
     }
 
@@ -97,12 +100,12 @@ class BrandShopsUseCaseTest {
         )
     }
 
-    /* Check interaction with data sharer */
+    /* Check interaction with choice data observer */
     /**
-     * Should clear touch choice data receiver on result and error.
+     * Should clear touch choice data observer on result and error.
      */
     @Test
-    fun shouldClearChoiceReceiverOnError() {
+    fun shouldClearChoiceObserverOnError() {
         // Given:
         Mockito.`when`(api.loadHome()).thenReturn(Single.error(IOException()))
 
@@ -110,14 +113,14 @@ class BrandShopsUseCaseTest {
         useCase.brandShops.test().isDisposed
 
         // Effect:
-        verify(choiceReceiver, Mockito.only()).onNext(-1)
+        verify(choiceObserver, Mockito.only()).onNext(-1)
     }
 
     /**
-     * Should clear touch choice data receiver on result.
+     * Should clear touch choice data observer on result.
      */
     @Test
-    fun shouldClearChoiceReceiverOnResult() {
+    fun shouldClearChoiceObserverOnResult() {
         // Given:
         Mockito.`when`(api.loadHome()).thenReturn(
             Single.just(
@@ -139,14 +142,14 @@ class BrandShopsUseCaseTest {
         useCase.brandShops.test().isDisposed
 
         // Effect:
-        verify(choiceReceiver, Mockito.only()).onNext(-1)
+        verify(choiceObserver, Mockito.only()).onNext(-1)
     }
 
     /**
      * Should provide the choice.
      */
     @Test
-    fun shouldProvideSelectionToChoiceReceiver() {
+    fun shouldProvideSelectionToChoiceObserver() {
         // Given:
         Mockito.`when`(api.loadHome()).thenReturn(
             Single.just(
@@ -169,17 +172,17 @@ class BrandShopsUseCaseTest {
         useCase.selectShopAt(3).test().isDisposed
 
         // Effect:
-        val inOrder = Mockito.inOrder(choiceReceiver)
-        inOrder.verify(choiceReceiver).onNext(-1)
-        inOrder.verify(choiceReceiver).onNext(3)
-        Mockito.verifyNoMoreInteractions(choiceReceiver)
+        val inOrder = Mockito.inOrder(choiceObserver)
+        inOrder.verify(choiceObserver).onNext(-1)
+        inOrder.verify(choiceObserver).onNext(3)
+        Mockito.verifyNoMoreInteractions(choiceObserver)
     }
 
     /**
      * Should remove the choice.
      */
     @Test
-    fun shouldRemoveSelectionFromChoiceReceiver() {
+    fun shouldRemoveSelectionFromChoiceObserver() {
         // Given:
         Mockito.`when`(api.loadHome()).thenReturn(
             Single.just(
@@ -202,14 +205,14 @@ class BrandShopsUseCaseTest {
         useCase.selectShopAt(null).test().isDisposed
 
         // Effect:
-        verify(choiceReceiver, Mockito.times(2)).onNext(-1)
+        verify(choiceObserver, Mockito.times(2)).onNext(-1)
     }
 
     /**
-     * Should not touch choice receiver if selection is wrong.
+     * Should not touch choice observer if selection is wrong.
      */
     @Test
-    fun doNotTouchChoiceReceiverIfSelectionInvalid() {
+    fun doNotTouchChoiceObserverIfSelectionInvalid() {
         // Given:
         Mockito.`when`(api.loadHome()).thenReturn(
             Single.just(
@@ -233,7 +236,146 @@ class BrandShopsUseCaseTest {
         useCase.selectShopAt(7).test().isDisposed
 
         // Effect:
-        verify(choiceReceiver, Mockito.only()).onNext(-1)
+        verify(choiceObserver, Mockito.only()).onNext(-1)
+    }
+
+    /* Check interaction with selected shop data observer */
+    /**
+     * Should clear touch choice data observer on result and error.
+     */
+    @Test
+    fun shouldClearSelectedShopObserverOnError() {
+        // Given:
+        Mockito.`when`(api.loadHome()).thenReturn(Single.error(IOException()))
+
+        // Action:
+        useCase.brandShops.test().isDisposed
+
+        // Effect:
+        verify(selectedShopObserver, Mockito.only()).onComplete()
+    }
+
+    /**
+     * Should clear touch choice data observer on result.
+     */
+    @Test
+    fun shouldClearSelectedShopObserverOnResult() {
+        // Given:
+        Mockito.`when`(api.loadHome()).thenReturn(
+            Single.just(
+                LocationsResponse(
+                    brand = Brand(
+                        listOf(
+                            Shop(id = "0"),
+                            Shop(id = "1"),
+                            Shop(id = "2"),
+                            Shop(id = "3"),
+                            Shop(id = "4")
+                        )
+                    )
+                )
+            )
+        )
+
+        // Action:
+        useCase.brandShops.test().isDisposed
+
+        // Effect:
+        verify(selectedShopObserver, Mockito.only()).onComplete()
+    }
+
+    /**
+     * Should provide the choice.
+     */
+    @Test
+    fun shouldProvideSelectionToSelectedShopObserver() {
+        // Given:
+        Mockito.`when`(api.loadHome()).thenReturn(
+            Single.just(
+                LocationsResponse(
+                    brand = Brand(
+                        listOf(
+                            Shop(id = "0"),
+                            Shop(id = "1"),
+                            Shop(id = "2"),
+                            Shop(id = "3"),
+                            Shop(id = "4")
+                        )
+                    )
+                )
+            )
+        )
+
+        // Action:
+        useCase.brandShops.test().isDisposed
+        useCase.selectShopAt(3).test().isDisposed
+
+        // Effect:
+        val inOrder = Mockito.inOrder(selectedShopObserver)
+        inOrder.verify(selectedShopObserver).onComplete()
+        inOrder.verify(selectedShopObserver).onNext(Shop(id = "3"))
+        Mockito.verifyNoMoreInteractions(selectedShopObserver)
+    }
+
+    /**
+     * Should remove the choice.
+     */
+    @Test
+    fun shouldRemoveSelectionFromSelectedShopObserver() {
+        // Given:
+        Mockito.`when`(api.loadHome()).thenReturn(
+            Single.just(
+                LocationsResponse(
+                    brand = Brand(
+                        listOf(
+                            Shop(id = "0"),
+                            Shop(id = "1"),
+                            Shop(id = "2"),
+                            Shop(id = "3"),
+                            Shop(id = "4")
+                        )
+                    )
+                )
+            )
+        )
+
+        // Action:
+        useCase.brandShops.test().isDisposed
+        useCase.selectShopAt(null).test().isDisposed
+
+        // Effect:
+        verify(selectedShopObserver, Mockito.times(2)).onComplete()
+    }
+
+    /**
+     * Should not touch choice observer if selection is wrong.
+     */
+    @Test
+    fun doNotTouchSelectedShopObserverIfSelectionInvalid() {
+        // Given:
+        Mockito.`when`(api.loadHome()).thenReturn(
+            Single.just(
+                LocationsResponse(
+                    brand = Brand(
+                        listOf(
+                            Shop(id = "0"),
+                            Shop(id = "1"),
+                            Shop(id = "2"),
+                            Shop(id = "3"),
+                            Shop(id = "4")
+                        )
+                    )
+                )
+            )
+        )
+
+        // Action:
+        useCase.brandShops.test().isDisposed
+        useCase.selectShopAt(-1).test().isDisposed
+        useCase.selectShopAt(7).test().isDisposed
+
+        // Effect:
+        verify(selectedShopObserver, Mockito.only()).onComplete()
     }
 
     /* Check answers on selection */
