@@ -7,9 +7,12 @@ import com.example.app.interactor.ShopChoiceSharer
 import com.example.app.presentation.ViewModelFactory
 import com.example.app.presentation.chooseshop.ChooseShopViewModel
 import com.example.app.presentation.chooseshop.ChooseShopViewModelImpl
+import com.example.app.presentation.selectedshop.SelectedShopViewModel
+import com.example.app.presentation.selectedshop.SelectedShopViewModelImpl
 import com.example.app.presentation.shoplistselection.ShopListSelectionViewModel
 import com.example.app.presentation.shoplistselection.ShopListSelectionViewModelImpl
 import com.example.app.view.ChooseShopFragment
+import com.example.app.view.SelectedShopFragment
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
@@ -35,6 +38,16 @@ fun inject(fragment: ChooseShopFragment) {
             )
         ).get(
             ShopListSelectionViewModelImpl::class.java
+        )
+}
+
+fun inject(fragment: SelectedShopFragment) {
+    fragment.selectionViewModel =
+        ViewModelProvider(
+            fragment,
+            ViewModelFactory<SelectedShopViewModel>(SelectedShopViewModelImpl(selectedShopSharer))
+        ).get(
+            SelectedShopViewModelImpl::class.java
         )
 }
 
