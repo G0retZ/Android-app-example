@@ -9,11 +9,19 @@ import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.Interpolator
 
-class HideAnimator(private val yDistance: Float, private val views: List<View>) {
+class HideAnimator(
+    private val yDistance: Float,
+    private val views: List<View>,
+    defaultVisibility: Boolean = false
+) {
 
     private var currentAnimator: Animator? = null
 
-    private var visible = true
+    private var visible = false
+
+    init {
+        setVisible(defaultVisibility)
+    }
 
     fun switchVisibility(visible: Boolean, onFinished: () -> Unit = {}) {
         currentAnimator?.cancel()
@@ -28,6 +36,14 @@ class HideAnimator(private val yDistance: Float, private val views: List<View>) 
             }
         } else {
             onFinished.invoke()
+        }
+    }
+
+    private fun setVisible(value: Boolean) {
+        currentAnimator?.cancel()
+        visible = value
+        views.forEach {
+            it.translationY = if (value) 0f else yDistance
         }
     }
 
