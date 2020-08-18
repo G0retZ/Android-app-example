@@ -34,3 +34,5 @@ interface ChooseShopViewActions {
      */
     fun showShopListRetryButton(show: Boolean)
 }
+
+const val CLOSE_CHOOSE_SHOP = "ShopListSelection.to.Close"

@@ -36,6 +36,9 @@ class ChooseShopViewModelTest {
     @Mock
     private lateinit var viewStateObserver: Observer<ViewState<ChooseShopViewActions>>
 
+    @Mock
+    private lateinit var navigateObserver: Observer<String>
+
     private lateinit var shopSingleSubject: SingleSubject<List<Shop>>
 
     @Before
@@ -248,6 +251,22 @@ class ChooseShopViewModelTest {
                 ChooseShopViewStateReady(listOf())
             )
         verifyNoMoreInteractions(viewStateObserver)
+    }
+
+    /* Check navigation */
+    @Test
+    fun setNavigateToCloseSelectionDetailsOnClose() {
+        // Given:
+        viewModel.navigationLiveData.observeForever(navigateObserver)
+
+        // Action:
+        viewModel.close()
+
+        // Effect:
+        Mockito.verify<Observer<String>>(
+            navigateObserver,
+            Mockito.only()
+        ).onChanged(CLOSE_CHOOSE_SHOP)
     }
 
     companion object {

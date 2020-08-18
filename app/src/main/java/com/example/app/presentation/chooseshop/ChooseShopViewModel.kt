@@ -13,20 +13,22 @@ import io.reactivex.disposables.Disposables
 /**
  * ViewModel of shops list view.
  */
-interface ChooseShopViewModel : ViewModel<ChooseShopViewActions, Void> {
+interface ChooseShopViewModel : ViewModel<ChooseShopViewActions, String> {
     /**
      * @param index - selected item
      */
     fun selectItem(index: Int)
 
     fun reloadShops()
+
+    fun close()
 }
 
 class ChooseShopViewModelImpl(private val brandShopsUseCase: BrandShopsUseCase) :
     androidx.lifecycle.ViewModel(), ChooseShopViewModel {
 
     override val viewStateLiveData = MutableLiveData<ViewState<ChooseShopViewActions>>()
-    override val navigationLiveData: SingleLiveEvent<Void> = SingleLiveEvent()
+    override val navigationLiveData: SingleLiveEvent<String> = SingleLiveEvent()
     private var shopsDisposable: Disposable = Disposables.disposed()
     private var choiceDisposable: Disposable = Disposables.disposed()
 
@@ -49,6 +51,10 @@ class ChooseShopViewModelImpl(private val brandShopsUseCase: BrandShopsUseCase) 
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::consumeShops, this::consumeError)
         }
+    }
+
+    override fun close() {
+        navigationLiveData.postValue(CLOSE_CHOOSE_SHOP)
     }
 
     private fun consumeShops(vehicles: List<Shop>) = viewStateLiveData.postValue(
