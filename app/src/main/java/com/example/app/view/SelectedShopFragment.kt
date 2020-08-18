@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.transition.TransitionInflater
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
@@ -30,6 +31,9 @@ class SelectedShopFragment : Fragment(), SelectedShopViewActions {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         inject(this)
+        enterTransition = TransitionInflater
+            .from(requireContext())
+            .inflateTransition(android.R.transition.slide_right)
     }
 
     override fun onCreateView(
@@ -63,8 +67,8 @@ class SelectedShopFragment : Fragment(), SelectedShopViewActions {
 
 
     override fun onResume() {
-        hideAnimator?.visible = true
         super.onResume()
+        hideAnimator?.visible = true
     }
 
     override fun onPause() {

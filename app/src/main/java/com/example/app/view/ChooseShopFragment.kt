@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.transition.TransitionInflater
 import com.example.app.Navigator
 import com.example.app.R
 import com.example.app.inject
@@ -33,6 +34,9 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         inject(this)
+        exitTransition = TransitionInflater
+            .from(requireContext())
+            .inflateTransition(android.R.transition.fade)
     }
 
     override fun onCreateView(
