@@ -1,9 +1,11 @@
 package com.example.app.view
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -30,6 +32,21 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
     lateinit var navigator: Navigator
 
     private var hideAnimator: HideAnimator? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        requireActivity().onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    hideAnimator?.switchVisibility(false) {
+                        isEnabled = false
+                        requireActivity().onBackPressed()
+                    }
+                }
+            }
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -125,6 +142,6 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
     }
 
     override fun showAcceptButton(show: Boolean) {
-        hideAnimator?.visible = show
+        hideAnimator?.switchVisibility(show)
     }
 }

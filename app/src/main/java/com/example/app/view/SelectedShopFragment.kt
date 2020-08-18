@@ -1,9 +1,11 @@
 package com.example.app.view
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.transition.TransitionInflater
@@ -16,9 +18,7 @@ import com.example.app.inject
 import com.example.app.presentation.ViewState
 import com.example.app.presentation.selectedshop.SelectedShopViewActions
 import com.example.app.presentation.selectedshop.SelectedShopViewModel
-import kotlinx.android.synthetic.main.fragment_choose_shop.accept
 import kotlinx.android.synthetic.main.fragment_selected_shop.*
-import kotlinx.android.synthetic.main.fragment_selected_shop.gradient
 
 class SelectedShopFragment : Fragment(), SelectedShopViewActions {
 
@@ -27,6 +27,21 @@ class SelectedShopFragment : Fragment(), SelectedShopViewActions {
     lateinit var navigator: Navigator
 
     private var hideAnimator: HideAnimator? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        requireActivity().onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    hideAnimator?.switchVisibility(false) {
+                        isEnabled = false
+                        requireActivity().onBackPressed()
+                    }
+                }
+            }
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,17 +79,6 @@ class SelectedShopFragment : Fragment(), SelectedShopViewActions {
                     .navigationLiveData
                     .observe(viewLifecycleOwner, Observer<String>(navigator::navigate))
             }
-
-
-    override fun onResume() {
-        super.onResume()
-        hideAnimator?.visible = true
-    }
-
-    override fun onPause() {
-        hideAnimator?.visible = false
-        super.onPause()
-    }
 
     override fun onDestroyView() = super.onDestroyView()
         .also {

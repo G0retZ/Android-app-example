@@ -13,19 +13,23 @@ class HideAnimator(private val yDistance: Float, private val views: List<View>) 
 
     private var currentAnimator: Animator? = null
 
-    var visible = true
-        set(value) {
-            currentAnimator?.cancel()
-            if (field != value) {
-                if (field) {
-                    createAnimator(views, 0f, yDistance, AccelerateInterpolator())
-                } else {
-                    createAnimator(views, 1f, 0f, DecelerateInterpolator())
-                }.animate {
-                    field = value
-                }
+    private var visible = true
+
+    fun switchVisibility(visible: Boolean, onFinished: () -> Unit = {}) {
+        currentAnimator?.cancel()
+        if (this.visible != visible) {
+            if (this.visible) {
+                createAnimator(views, 0f, yDistance, AccelerateInterpolator())
+            } else {
+                createAnimator(views, 1f, 0f, DecelerateInterpolator())
+            }.animate {
+                this.visible = visible
+                onFinished.invoke()
             }
+        } else {
+            onFinished.invoke()
         }
+    }
 
     private fun AnimatorSet.animate(onResult: () -> Unit) {
         addListener(
