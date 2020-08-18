@@ -39,7 +39,7 @@ class HideAnimator(
         }
     }
 
-    private fun setVisible(value: Boolean) {
+    fun setVisible(value: Boolean) {
         currentAnimator?.cancel()
         visible = value
         views.forEach {

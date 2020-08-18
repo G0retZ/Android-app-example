@@ -9,7 +9,9 @@ import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.transition.Transition
 import androidx.transition.TransitionInflater
+import androidx.transition.TransitionListenerAdapter
 import com.example.app.Navigator
 import com.example.app.R
 import com.example.app.inject
@@ -54,6 +56,26 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
         exitTransition = TransitionInflater
             .from(requireContext())
             .inflateTransition(android.R.transition.fade)
+        reenterTransition = TransitionInflater
+            .from(requireContext())
+            .inflateTransition(android.R.transition.fade)
+            .addListener(object : TransitionListenerAdapter() {
+                override fun onTransitionStart(transition: Transition) {
+                    hideAnimator?.setVisible(false)
+                }
+
+                override fun onTransitionCancel(transition: Transition) {
+                    (recyclerView.adapter as? ChooseShopAdapter)?.selection?.let {
+                        hideAnimator?.setVisible(true)
+                    }
+                }
+
+                override fun onTransitionEnd(transition: Transition) {
+                    (recyclerView.adapter as? ChooseShopAdapter)?.selection?.let {
+                        hideAnimator?.switchVisibility(true)
+                    }
+                }
+            })
     }
 
     override fun onCreateView(
