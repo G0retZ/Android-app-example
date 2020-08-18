@@ -9,6 +9,7 @@ import androidx.lifecycle.Observer
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.example.app.Navigator
 import com.example.app.R
 import com.example.app.inject
 import com.example.app.presentation.ViewState
@@ -21,6 +22,8 @@ import kotlinx.android.synthetic.main.fragment_selected_shop.gradient
 class SelectedShopFragment : Fragment(), SelectedShopViewActions {
 
     lateinit var selectionViewModel: SelectedShopViewModel
+
+    lateinit var navigator: Navigator
 
     private var hideAnimator: HideAnimator? = null
 
@@ -55,10 +58,7 @@ class SelectedShopFragment : Fragment(), SelectedShopViewActions {
 
                 selectionViewModel
                     .navigationLiveData
-                    .observe(viewLifecycleOwner,
-                        Observer<String> {
-
-                        })
+                    .observe(viewLifecycleOwner, Observer<String>(navigator::navigate))
             }
 
 

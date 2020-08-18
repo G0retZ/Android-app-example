@@ -23,6 +23,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import timber.log.Timber
 
 fun inject(fragment: ChooseShopFragment) {
+    (fragment.context as? Navigator)?.let { fragment.navigator = it }
     fragment.chooseShopViewModel =
         ViewModelProvider(
             fragment,
@@ -42,6 +43,7 @@ fun inject(fragment: ChooseShopFragment) {
 }
 
 fun inject(fragment: SelectedShopFragment) {
+    (fragment.context as? Navigator)?.let { fragment.navigator = it }
     fragment.selectionViewModel =
         ViewModelProvider(
             fragment,

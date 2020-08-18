@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.app.Navigator
 import com.example.app.R
 import com.example.app.inject
 import com.example.app.presentation.ViewState
@@ -24,6 +25,8 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
     lateinit var chooseShopViewModel: ChooseShopViewModel
 
     lateinit var shopSelectionViewModel: ShopListSelectionViewModel
+
+    lateinit var navigator: Navigator
 
     private var hideAnimator: HideAnimator? = null
 
@@ -76,17 +79,11 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
 
                 chooseShopViewModel
                     .navigationLiveData
-                    .observe(viewLifecycleOwner,
-                        Observer<String> {
-
-                        })
+                    .observe(viewLifecycleOwner, Observer<String>(navigator::navigate))
 
                 shopSelectionViewModel
                     .navigationLiveData
-                    .observe(viewLifecycleOwner,
-                        Observer<String> {
-
-                        })
+                    .observe(viewLifecycleOwner, Observer<String>(navigator::navigate))
             }
 
     override fun onDestroyView() = super.onDestroyView()
