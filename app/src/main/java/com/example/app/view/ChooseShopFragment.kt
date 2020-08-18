@@ -79,7 +79,9 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
                     ).show()
                 }
                 accept.setOnClickListener {
-                    shopSelectionViewModel.accept()
+                    hideAnimator?.switchVisibility(false) {
+                        shopSelectionViewModel.accept()
+                    }
                 }
                 close.setOnClickListener {
                     chooseShopViewModel.close()
