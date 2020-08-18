@@ -8,7 +8,9 @@ import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.transition.Transition
 import androidx.transition.TransitionInflater
+import androidx.transition.TransitionListenerAdapter
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
@@ -49,6 +51,11 @@ class SelectedShopFragment : Fragment(), SelectedShopViewActions {
         enterTransition = TransitionInflater
             .from(requireContext())
             .inflateTransition(android.R.transition.slide_right)
+            .addListener(object : TransitionListenerAdapter() {
+                override fun onTransitionEnd(transition: Transition) {
+                    hideAnimator?.switchVisibility(true)
+                }
+            })
     }
 
     override fun onCreateView(
