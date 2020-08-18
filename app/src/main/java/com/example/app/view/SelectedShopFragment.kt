@@ -41,6 +41,9 @@ class SelectedShopFragment : Fragment(), SelectedShopViewActions {
                 accept.setOnClickListener {
                     selectionViewModel.accept()
                 }
+                close.setOnClickListener {
+                    selectionViewModel.close()
+                }
                 hideAnimator = HideAnimator(
                     resources.displayMetrics.density * 128,
                     listOf(accept, gradient)

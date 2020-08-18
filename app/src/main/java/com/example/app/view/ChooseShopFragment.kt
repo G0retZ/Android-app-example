@@ -57,6 +57,9 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
                 accept.setOnClickListener {
                     shopSelectionViewModel.accept()
                 }
+                close.setOnClickListener {
+                    chooseShopViewModel.close()
+                }
                 hideAnimator = HideAnimator(
                     resources.displayMetrics.density * 128,
                     listOf(accept, gradient)
@@ -70,6 +73,13 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
                     .viewStateLiveData
                     .observe(viewLifecycleOwner,
                         Observer<ViewState<ShopListSelectionViewActions>> { it?.apply(this) })
+
+                chooseShopViewModel
+                    .navigationLiveData
+                    .observe(viewLifecycleOwner,
+                        Observer<String> {
+
+                        })
 
                 shopSelectionViewModel
                     .navigationLiveData
