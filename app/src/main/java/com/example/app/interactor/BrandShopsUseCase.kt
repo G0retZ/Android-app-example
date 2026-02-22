@@ -40,16 +40,18 @@ class BrandShopsUseCaseImpl(
                 choice.onNext(-1)
                 selectedShop.onComplete()
             }
+
             shops.indices.contains(selection) -> {
                 choice.onNext(selection)
                 selectedShop.onNext(shops[selection])
             }
+
             else -> throw IndexOutOfBoundsException("There is no such index: $selection")
         }
     }
 }
 
-class ShopChoiceSharer() : MemoryDataSharer<Int>() {
+class ShopChoiceSharer : MemoryDataSharer<Int>() {
     override fun onNext(data: Int) = super.onNext(if (data == subject.value) -1 else data)
 }
 

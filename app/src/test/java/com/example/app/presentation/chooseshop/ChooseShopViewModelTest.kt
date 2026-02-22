@@ -14,7 +14,8 @@ import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
-import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.anyInt
+import org.mockito.ArgumentMatchers.isA
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.verify
@@ -43,11 +44,11 @@ class ChooseShopViewModelTest {
 
     @Before
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
+        MockitoAnnotations.openMocks(this)
         shopSingleSubject = SingleSubject.create<List<Shop>>()
         Mockito.`when`(brandShopsUseCase.brandShops)
             .thenReturn(shopSingleSubject)
-        Mockito.`when`(brandShopsUseCase.selectShopAt(ArgumentMatchers.any()))
+        Mockito.`when`(brandShopsUseCase.selectShopAt(anyInt()))
             .thenReturn(Completable.never())
         viewModel = ChooseShopViewModelImpl(brandShopsUseCase)
     }
@@ -77,7 +78,7 @@ class ChooseShopViewModelTest {
     @Test
     fun shouldAskUseCaseToSelectByIndex() {
         // Given:
-        Mockito.`when`(brandShopsUseCase.selectShopAt(ArgumentMatchers.any()))
+        Mockito.`when`(brandShopsUseCase.selectShopAt(anyInt()))
             .thenReturn(Completable.complete())
 
         // Action:
@@ -118,7 +119,7 @@ class ChooseShopViewModelTest {
         // Effect:
         inOrder.verify(viewStateObserver)
             .onChanged(
-                ArgumentMatchers.any(ChooseShopViewStatePending::class.java)
+                isA(ChooseShopViewStatePending::class.java)
             )
         verifyNoMoreInteractions(viewStateObserver)
     }
@@ -135,7 +136,7 @@ class ChooseShopViewModelTest {
         // Effect:
         inOrder.verify(viewStateObserver)
             .onChanged(
-                ArgumentMatchers.any(ChooseShopViewStatePending::class.java)
+                isA(ChooseShopViewStatePending::class.java)
             )
         inOrder.verify(viewStateObserver)
             .onChanged(
@@ -158,7 +159,7 @@ class ChooseShopViewModelTest {
         // Effect:
         inOrder.verify(viewStateObserver)
             .onChanged(
-                ArgumentMatchers.any(ChooseShopViewStatePending::class.java)
+                isA(ChooseShopViewStatePending::class.java)
             )
         inOrder.verify(viewStateObserver)
             .onChanged(
@@ -188,7 +189,7 @@ class ChooseShopViewModelTest {
         // Effect:
         inOrder.verify(viewStateObserver)
             .onChanged(
-                ArgumentMatchers.any(ChooseShopViewStatePending::class.java)
+                isA(ChooseShopViewStatePending::class.java)
             )
         inOrder.verify(viewStateObserver)
             .onChanged(
@@ -196,7 +197,7 @@ class ChooseShopViewModelTest {
             )
         inOrder.verify(viewStateObserver)
             .onChanged(
-                ArgumentMatchers.any(ChooseShopViewStatePending::class.java)
+                isA(ChooseShopViewStatePending::class.java)
             )
         verifyNoMoreInteractions(viewStateObserver)
     }
@@ -205,7 +206,7 @@ class ChooseShopViewModelTest {
     fun shouldSetErrorViewStateToLiveDataOnSelectionFailure() {
         // Given:
         val inOrder = Mockito.inOrder(viewStateObserver)
-        Mockito.`when`(brandShopsUseCase.selectShopAt(ArgumentMatchers.any()))
+        Mockito.`when`(brandShopsUseCase.selectShopAt(anyInt()))
             .thenReturn(Completable.error(IndexOutOfBoundsException("Error 2")))
         viewModel.viewStateLiveData.observeForever(viewStateObserver)
 
@@ -216,7 +217,7 @@ class ChooseShopViewModelTest {
         // Effect:
         inOrder.verify(viewStateObserver)
             .onChanged(
-                ArgumentMatchers.any(ChooseShopViewStatePending::class.java)
+                isA(ChooseShopViewStatePending::class.java)
             )
         inOrder.verify(viewStateObserver)
             .onChanged(
@@ -233,7 +234,7 @@ class ChooseShopViewModelTest {
     fun shouldNoSetOtherViewStateToLiveDataOnSelectionSuccess() {
         // Given:
         val inOrder = Mockito.inOrder(viewStateObserver)
-        Mockito.`when`(brandShopsUseCase.selectShopAt(ArgumentMatchers.any()))
+        Mockito.`when`(brandShopsUseCase.selectShopAt(anyInt()))
             .thenReturn(Completable.complete())
         viewModel.viewStateLiveData.observeForever(viewStateObserver)
 
@@ -244,7 +245,7 @@ class ChooseShopViewModelTest {
         // Effect:
         inOrder.verify(viewStateObserver)
             .onChanged(
-                ArgumentMatchers.any(ChooseShopViewStatePending::class.java)
+                isA(ChooseShopViewStatePending::class.java)
             )
         inOrder.verify(viewStateObserver)
             .onChanged(
@@ -263,7 +264,7 @@ class ChooseShopViewModelTest {
         viewModel.close()
 
         // Effect:
-        Mockito.verify<Observer<String>>(
+        verify(
             navigateObserver,
             Mockito.only()
         ).onChanged(CLOSE_CHOOSE_SHOP)

@@ -16,11 +16,10 @@ import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.example.app.Navigator
 import com.example.app.R
+import com.example.app.databinding.FragmentSelectedShopBinding
 import com.example.app.inject
-import com.example.app.presentation.ViewState
 import com.example.app.presentation.selectedshop.SelectedShopViewActions
 import com.example.app.presentation.selectedshop.SelectedShopViewModel
-import kotlinx.android.synthetic.main.fragment_selected_shop.*
 
 class SelectedShopFragment : Fragment(), SelectedShopViewActions {
 
@@ -30,6 +29,12 @@ class SelectedShopFragment : Fragment(), SelectedShopViewActions {
 
     private var hideAnimator: HideAnimator? = null
 
+    private var _binding: FragmentSelectedShopBinding? = null
+
+    // This property is only valid between onCreateView and
+// onDestroyView.
+    private val binding get() = _binding!!
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         requireActivity().onBackPressedDispatcher.addCallback(
@@ -38,7 +43,7 @@ class SelectedShopFragment : Fragment(), SelectedShopViewActions {
                 override fun handleOnBackPressed() {
                     hideAnimator?.switchVisibility(false) {
                         isEnabled = false
-                        requireActivity().onBackPressed()
+                        requireActivity().onBackPressedDispatcher.onBackPressed()
                     }
                 }
             }
@@ -51,7 +56,7 @@ class SelectedShopFragment : Fragment(), SelectedShopViewActions {
         enterTransition = TransitionInflater
             .from(requireContext())
             .inflateTransition(android.R.transition.slide_right)
-            .addListener(object : TransitionListenerAdapter() {
+            ?.addListener(object : TransitionListenerAdapter() {
                 override fun onTransitionEnd(transition: Transition) {
                     hideAnimator?.switchVisibility(true)
                 }
@@ -62,29 +67,33 @@ class SelectedShopFragment : Fragment(), SelectedShopViewActions {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? = inflater.inflate(R.layout.fragment_selected_shop, container, false)
+    ): View? {
+        _binding = FragmentSelectedShopBinding.inflate(inflater, container, false)
+        return inflater.inflate(R.layout.fragment_selected_shop, container, false)
+    }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) =
-        super.onActivityCreated(savedInstanceState)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) =
+        super.onViewCreated(view, savedInstanceState)
             .also {
-                accept.setOnClickListener {
+                binding.accept.setOnClickListener {
                     selectionViewModel.accept()
                 }
-                close.setOnClickListener {
+                binding.close.setOnClickListener {
                     selectionViewModel.close()
                 }
                 hideAnimator = HideAnimator(
                     resources.displayMetrics.density * 128,
-                    listOf(accept, gradient)
+                    listOf(binding.accept, binding.gradient)
                 )
                 selectionViewModel
                     .viewStateLiveData
-                    .observe(viewLifecycleOwner,
-                        Observer<ViewState<SelectedShopViewActions>> { it?.apply(this) })
+                    .observe(
+                        viewLifecycleOwner,
+                        Observer { it?.apply(this) })
 
                 selectionViewModel
                     .navigationLiveData
-                    .observe(viewLifecycleOwner, Observer<String>(navigator::navigate))
+                    .observe(viewLifecycleOwner, Observer(navigator::navigate))
             }
 
     override fun onDestroyView() = super.onDestroyView()
@@ -93,7 +102,7 @@ class SelectedShopFragment : Fragment(), SelectedShopViewActions {
         }
 
     override fun setName(name: String) {
-        shopName.text = name
+        binding.shopName.text = name
     }
 
     override fun setPicture(url: String?) {
@@ -106,15 +115,15 @@ class SelectedShopFragment : Fragment(), SelectedShopViewActions {
                     CenterCrop(),
                     RoundedCorners((resources.displayMetrics.density * 16).toInt())
                 )
-                .into(picture)
+                .into(binding.picture)
         }
     }
 
     override fun setStreet(address: String) {
-        shopAddress.text = address
+        binding.shopAddress.text = address
     }
 
     override fun setCity(city: String) {
-        shopCity.text = city
+        binding.shopCity.text = city
     }
 }

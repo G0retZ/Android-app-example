@@ -14,6 +14,7 @@ import androidx.transition.TransitionInflater
 import androidx.transition.TransitionListenerAdapter
 import com.example.app.Navigator
 import com.example.app.R
+import com.example.app.databinding.FragmentChooseShopBinding
 import com.example.app.inject
 import com.example.app.presentation.ViewState
 import com.example.app.presentation.chooseshop.ChooseShopListItem
@@ -22,7 +23,6 @@ import com.example.app.presentation.chooseshop.ChooseShopViewModel
 import com.example.app.presentation.shoplistselection.ShopListSelectionViewActions
 import com.example.app.presentation.shoplistselection.ShopListSelectionViewModel
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.fragment_choose_shop.*
 import timber.log.Timber
 
 class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionViewActions {
@@ -35,6 +35,12 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
 
     private var hideAnimator: HideAnimator? = null
 
+    private var _binding: FragmentChooseShopBinding? = null
+
+    // This property is only valid between onCreateView and
+// onDestroyView.
+    private val binding get() = _binding!!
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         requireActivity().onBackPressedDispatcher.addCallback(
@@ -43,7 +49,7 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
                 override fun handleOnBackPressed() {
                     hideAnimator?.switchVisibility(false) {
                         isEnabled = false
-                        requireActivity().onBackPressed()
+                        requireActivity().onBackPressedDispatcher.onBackPressed()
                     }
                 }
             }
@@ -59,19 +65,19 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
         reenterTransition = TransitionInflater
             .from(requireContext())
             .inflateTransition(android.R.transition.fade)
-            .addListener(object : TransitionListenerAdapter() {
+            ?.addListener(object : TransitionListenerAdapter() {
                 override fun onTransitionStart(transition: Transition) {
                     hideAnimator?.setVisible(false)
                 }
 
                 override fun onTransitionCancel(transition: Transition) {
-                    (recyclerView.adapter as? ChooseShopAdapter)?.selection?.let {
+                    (binding.recyclerView.adapter as? ChooseShopAdapter)?.selection?.let {
                         hideAnimator?.setVisible(true)
                     }
                 }
 
                 override fun onTransitionEnd(transition: Transition) {
-                    (recyclerView.adapter as? ChooseShopAdapter)?.selection?.let {
+                    (binding.recyclerView.adapter as? ChooseShopAdapter)?.selection?.let {
                         hideAnimator?.switchVisibility(true)
                     }
                 }
@@ -82,17 +88,20 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? = inflater.inflate(R.layout.fragment_choose_shop, container, false)
+    ): View? {
+        _binding = FragmentChooseShopBinding.inflate(inflater, container, false)
+        return inflater.inflate(R.layout.fragment_choose_shop, container, false)
+    }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) =
-        super.onActivityCreated(savedInstanceState)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) =
+        super.onViewCreated(view, savedInstanceState)
             .also {
-                retryButton.setOnClickListener {
+                binding.retryButton.setOnClickListener {
                     chooseShopViewModel.reloadShops()
                 }
-                recyclerView.layoutManager = LinearLayoutManager(context)
-                recyclerView.adapter = ChooseShopAdapter(listOf()) {}
-                nearby.setOnClickListener {
+                binding.recyclerView.layoutManager = LinearLayoutManager(context)
+                binding.recyclerView.adapter = ChooseShopAdapter(listOf()) {}
+                binding.nearby.setOnClickListener {
                     Timber.d("Nearby clicked!")
                     Snackbar.make(
                         it,
@@ -100,27 +109,29 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
                         Snackbar.LENGTH_SHORT
                     ).show()
                 }
-                accept.setOnClickListener {
+                binding.accept.setOnClickListener {
                     hideAnimator?.switchVisibility(false) {
                         shopSelectionViewModel.accept()
                     }
                 }
-                close.setOnClickListener {
+                binding.close.setOnClickListener {
                     chooseShopViewModel.close()
                 }
                 hideAnimator = HideAnimator(
                     resources.displayMetrics.density * 128,
-                    listOf(accept, gradient)
+                    listOf(binding.accept, binding.gradient)
                 )
                 chooseShopViewModel
                     .viewStateLiveData
-                    .observe(viewLifecycleOwner,
-                        Observer<ViewState<ChooseShopViewActions>> { it?.apply(this) })
+                    .observe(
+                        viewLifecycleOwner,
+                        Observer<ViewState<ChooseShopViewActions>> { it.apply(this) })
 
                 shopSelectionViewModel
                     .viewStateLiveData
-                    .observe(viewLifecycleOwner,
-                        Observer<ViewState<ShopListSelectionViewActions>> { it?.apply(this) })
+                    .observe(
+                        viewLifecycleOwner,
+                        Observer<ViewState<ShopListSelectionViewActions>> { it.apply(this) })
 
                 chooseShopViewModel
                     .navigationLiveData
@@ -137,32 +148,32 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
         }
 
     override fun showShopListPending(show: Boolean) {
-        pending.visibility = if (show) View.VISIBLE else View.GONE
+        binding.pending.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     override fun showShopList(show: Boolean) {
-        recyclerView.visibility = if (show) View.VISIBLE else View.GONE
+        binding.recyclerView.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     override fun setShopListItems(chooseShopListItems: List<ChooseShopListItem>) {
-        recyclerView.adapter =
+        binding.recyclerView.adapter =
             ChooseShopAdapter(chooseShopListItems, chooseShopViewModel::selectItem)
     }
 
     override fun showShopListErrorMessage(show: Boolean) {
-        errorText.visibility = if (show) View.VISIBLE else View.GONE
+        binding.errorText.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     override fun setShopListErrorMessage(message: String) {
-        errorText.text = message
+        binding.errorText.text = message
     }
 
     override fun showShopListRetryButton(show: Boolean) {
-        retryButton.visibility = if (show) View.VISIBLE else View.GONE
+        binding.retryButton.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     override fun showSelectedIndex(index: Int?) {
-        (recyclerView.adapter as? ChooseShopAdapter)?.selection = index
+        (binding.recyclerView.adapter as? ChooseShopAdapter)?.selection = index
     }
 
     override fun showAcceptButton(show: Boolean) {

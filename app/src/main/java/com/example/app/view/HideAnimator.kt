@@ -57,7 +57,7 @@ class HideAnimator(
                     cancelled = false
                 }
 
-                override fun onAnimationCancel(animation: Animator?) {
+                override fun onAnimationCancel(animation: Animator) {
                     cancelled = true
                 }
 
@@ -77,7 +77,8 @@ class HideAnimator(
     ): AnimatorSet {
         return AnimatorSet()
             .apply {
-                playTogether(views
+                playTogether(
+                    views
                     .map {
                         listOf(
                             ObjectAnimator.ofFloat(it, View.ALPHA, alpha),

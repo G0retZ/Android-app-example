@@ -27,7 +27,7 @@ class BrandShopsUseCaseTest {
 
     @Before
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
+        MockitoAnnotations.openMocks(this)
         useCase = BrandShopsUseCaseImpl(api, choiceObserver, selectedShopObserver)
         Mockito.`when`(api.loadHome()).thenReturn(Single.never())
     }

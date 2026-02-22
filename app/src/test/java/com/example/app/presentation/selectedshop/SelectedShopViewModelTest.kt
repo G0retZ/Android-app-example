@@ -14,6 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
 import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.isA
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.verify
@@ -40,7 +41,7 @@ class SelectedShopViewModelTest {
 
     @Before
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
+        MockitoAnnotations.openMocks(this)
         selectionSubject = PublishSubject.create()
         Mockito.`when`(useCase.get()).thenReturn(selectionSubject)
         viewModel = SelectedShopViewModelImpl(useCase)
@@ -110,7 +111,7 @@ class SelectedShopViewModelTest {
         // Effect:
         inOrder.verify(viewStateObserver)
             .onChanged(
-                ArgumentMatchers.any(SelectedShopStateNotSelected::class.java)
+                isA(SelectedShopStateNotSelected::class.java)
             )
         inOrder.verify(viewStateObserver)
             .onChanged(
@@ -161,7 +162,7 @@ class SelectedShopViewModelTest {
         viewModel.close()
 
         // Effect:
-        Mockito.verify<Observer<String>>(
+        verify(
             navigateObserver,
             Mockito.only()
         ).onChanged(CLOSE_SELECTION_DETAILS)
@@ -177,7 +178,7 @@ class SelectedShopViewModelTest {
         selectionSubject.onComplete()
 
         // Effect:
-        Mockito.verify<Observer<String>>(
+        verify(
             navigateObserver,
             Mockito.only()
         ).onChanged(CLOSE_SELECTION_DETAILS)

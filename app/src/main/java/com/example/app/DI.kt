@@ -16,11 +16,9 @@ import com.example.app.view.SelectedShopFragment
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
-import timber.log.Timber
 
 fun inject(fragment: ChooseShopFragment) {
     (fragment.context as? Navigator)?.let { fragment.navigator = it }
@@ -63,17 +61,7 @@ val gson: Gson by lazy {
 val okHttpClient by lazy {
     OkHttpClient
         .Builder()
-        .apply {
-            if (BuildConfig.DEBUG) {
-                addNetworkInterceptor(
-                    HttpLoggingInterceptor(object : HttpLoggingInterceptor.Logger {
-                        override fun log(message: String) {
-                            Timber.v(message)
-                        }
-                    }).setLevel(HttpLoggingInterceptor.Level.BODY)
-                )
-            }
-        }
+        .withLoggedTraffic()
         .build()
 }
 
@@ -83,7 +71,7 @@ val api: LocationsApi by lazy {
         .addConverterFactory(GsonConverterFactory.create(gson))
         .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
         .client(okHttpClient)
-        .baseUrl(BuildConfig.BASE_URL)
+        .baseUrl("https://api-staging-1.getsquire.com/v1/")
         .build()
         .create(LocationsApi::class.java)
 }

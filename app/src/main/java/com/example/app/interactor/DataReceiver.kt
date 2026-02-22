@@ -25,7 +25,7 @@ abstract class MemoryDataSharer<D> : DataReceiver<D>, Observer<D> {
 
     override fun onSubscribe(d: Disposable) = subject.onSubscribe(d)
 
-    override fun onNext(data: D) = subject.onNext(data)
+    override fun onNext(data: D & Any) = subject.onNext(data)
 
     override fun onError(e: Throwable) = with(subject) {
         subject = BehaviorSubject.create()

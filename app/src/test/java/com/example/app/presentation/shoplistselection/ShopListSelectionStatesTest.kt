@@ -4,18 +4,18 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mock
+import org.mockito.ArgumentMatchers.eq
+import org.mockito.ArgumentMatchers.isNull
+import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoMoreInteractions
-import org.mockito.MockitoAnnotations
 
 class ShopListSelectionStatesTest {
-    @Mock
     private lateinit var viewActions: ShopListSelectionViewActions
 
     @Before
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
+        viewActions = mock(ShopListSelectionViewActions::class.java)
     }
 
     @Test
@@ -24,8 +24,8 @@ class ShopListSelectionStatesTest {
         ShopListSelectionStateSelected(2).apply(viewActions)
 
         // Результат:
-        verify(viewActions).showAcceptButton(true)
-        verify(viewActions).showSelectedIndex(2)
+        verify(viewActions).showAcceptButton(eq(true))
+        verify(viewActions).showSelectedIndex(eq(2))
         verifyNoMoreInteractions(viewActions)
     }
 
@@ -41,8 +41,8 @@ class ShopListSelectionStatesTest {
         ShopListSelectionStateNotSelected().apply(viewActions)
 
         // Результат:
-        verify(viewActions).showAcceptButton(false)
-        verify(viewActions).showSelectedIndex(null)
+        verify(viewActions).showAcceptButton(eq(false))
+        verify(viewActions).showSelectedIndex(isNull())
         verifyNoMoreInteractions(viewActions)
     }
 }

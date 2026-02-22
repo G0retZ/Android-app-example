@@ -4,7 +4,7 @@ import com.example.app.Address
 import com.example.app.Location
 import com.example.app.Shop
 
-data class ChooseShopListItem internal constructor(private val shop: Shop) {
+data class ChooseShopListItem(private val shop: Shop) {
 
     val name = shop.name?.ifBlank { null } ?: "No name"
     val thumbnail = shop.photos.getOrNull(0)?.thumbnail?.ifBlank { null }

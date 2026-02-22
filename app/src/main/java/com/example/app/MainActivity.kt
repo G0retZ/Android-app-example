@@ -27,8 +27,9 @@ class MainActivity : AppCompatActivity(), Navigator {
                 .replace(R.id.content, SelectedShopFragment())
                 .addToBackStack(null)
                 .commit()
+
             CLOSE_CHOOSE_SHOP,
-            CLOSE_SELECTION_DETAILS -> onBackPressed()
+            CLOSE_SELECTION_DETAILS -> onBackPressedDispatcher.onBackPressed()
         }
     }
 }
