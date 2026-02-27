@@ -1,13 +1,15 @@
 package com.example.app.presentation.shoplistselection
 
-import androidx.lifecycle.MutableLiveData
-import com.example.app.interactor.DataReceiver
-import com.example.app.presentation.SingleLiveEvent
+import androidx.lifecycle.viewModelScope
 import com.example.app.presentation.ViewModel
 import com.example.app.presentation.ViewState
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
-import io.reactivex.disposables.Disposables
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel of shops list selection.
@@ -16,35 +18,29 @@ interface ShopListSelectionViewModel : ViewModel<ShopListSelectionViewActions, S
     fun accept()
 }
 
-class ShopListSelectionViewModelImpl(selectionUseCase: DataReceiver<Int>) :
+class ShopListSelectionViewModelImpl(currentSelection: Flow<Int>) :
     androidx.lifecycle.ViewModel(), ShopListSelectionViewModel {
 
-    override val viewStateLiveData = MutableLiveData<ViewState<ShopListSelectionViewActions>>()
-    override val navigationLiveData: SingleLiveEvent<String> = SingleLiveEvent()
-    private var selectionDisposable: Disposable = Disposables.disposed()
-
-    init {
-        if (selectionDisposable.isDisposed) {
-            viewStateLiveData.postValue(ShopListSelectionStateNotSelected())
-            selectionDisposable = selectionUseCase.get()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::consumeSelection) {}
+    override val viewStates =
+        MutableStateFlow<ViewState<ShopListSelectionViewActions>>(ShopListSelectionStateNotSelected)
+    override val navigation = MutableSharedFlow<String>()
+    private val selectionJob: Job = currentSelection
+        .onEach {
+            if (it < 0) {
+                viewStates.emit(ShopListSelectionStateNotSelected)
+            } else {
+                viewStates.emit(ShopListSelectionStateSelected(it))
+            }
         }
-    }
+        .launchIn(viewModelScope)
 
     override fun accept() {
-        navigationLiveData.postValue(TO_SELECTION_DETAILS)
+        viewModelScope.launch {
+            navigation.emit(TO_SELECTION_DETAILS)
+        }
     }
 
-    private fun consumeSelection(selection: Int) = viewStateLiveData.postValue(
-        if (selection < 0) {
-            ShopListSelectionStateNotSelected()
-        } else {
-            ShopListSelectionStateSelected(selection)
-        }
-    )
-
     override fun onCleared() = super.onCleared().also {
-        selectionDisposable.dispose()
+        selectionJob.cancel()
     }
 }

@@ -7,36 +7,35 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mock
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyNoMoreInteractions
-import org.mockito.MockitoAnnotations
 
 class SelectedShopStatesTest {
-    @Mock
-    private lateinit var viewActions: SelectedShopViewActions
+    private lateinit var viewActions: SelectedShopViewActionsMock
 
     @Before
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
+        viewActions = SelectedShopViewActionsMock()
     }
 
     @Test
     fun testSelectedWithoutDataActions() {
-        // Действие:
+        // Action:
         SelectedShopStateSelected(Shop(id = "2")).apply(viewActions)
 
-        // Результат:
-        verify(viewActions).setName("No name")
-        verify(viewActions).setPicture(null)
-        verify(viewActions).setStreet("")
-        verify(viewActions).setCity("")
-        verifyNoMoreInteractions(viewActions)
+        // Effect:
+        assertEquals(
+            SelectedShopViewStateResult(
+                name = "No name",
+                url = null,
+                address = "",
+                city = ""
+            ),
+            viewActions.result
+        )
     }
 
     @Test
     fun testSelectedWithNullDataActions() {
-        // Действие:
+        // Action:
         SelectedShopStateSelected(
             Shop(
                 name = null,
@@ -45,17 +44,21 @@ class SelectedShopStatesTest {
             )
         ).apply(viewActions)
 
-        // Результат:
-        verify(viewActions).setName("No name")
-        verify(viewActions).setPicture(null)
-        verify(viewActions).setStreet("")
-        verify(viewActions).setCity("")
-        verifyNoMoreInteractions(viewActions)
+        // Effect:
+        assertEquals(
+            SelectedShopViewStateResult(
+                name = "No name",
+                url = null,
+                address = "",
+                city = ""
+            ),
+            viewActions.result
+        )
     }
 
     @Test
     fun testSelectedWithNullDataInAddressActions() {
-        // Действие:
+        // Action:
         SelectedShopStateSelected(
             Shop(
                 name = null,
@@ -64,17 +67,21 @@ class SelectedShopStatesTest {
             )
         ).apply(viewActions)
 
-        // Результат:
-        verify(viewActions).setName("No name")
-        verify(viewActions).setPicture(null)
-        verify(viewActions).setStreet("")
-        verify(viewActions).setCity("")
-        verifyNoMoreInteractions(viewActions)
+        // Effect:
+        assertEquals(
+            SelectedShopViewStateResult(
+                name = "No name",
+                url = null,
+                address = "",
+                city = ""
+            ),
+            viewActions.result
+        )
     }
 
     @Test
     fun testSelectedWithEmptyDataActions() {
-        // Действие:
+        // Action:
         SelectedShopStateSelected(
             Shop(
                 name = "",
@@ -83,17 +90,21 @@ class SelectedShopStatesTest {
             )
         ).apply(viewActions)
 
-        // Результат:
-        verify(viewActions).setName("No name")
-        verify(viewActions).setPicture(null)
-        verify(viewActions).setStreet("")
-        verify(viewActions).setCity("")
-        verifyNoMoreInteractions(viewActions)
+        // Effect:
+        assertEquals(
+            SelectedShopViewStateResult(
+                name = "No name",
+                url = null,
+                address = "",
+                city = ""
+            ),
+            viewActions.result
+        )
     }
 
     @Test
     fun testSelectedWithBlankDataActions() {
-        // Действие:
+        // Action:
         SelectedShopStateSelected(
             Shop(
                 name = " ",
@@ -102,17 +113,21 @@ class SelectedShopStatesTest {
             )
         ).apply(viewActions)
 
-        // Результат:
-        verify(viewActions).setName("No name")
-        verify(viewActions).setPicture(null)
-        verify(viewActions).setStreet("")
-        verify(viewActions).setCity("")
-        verifyNoMoreInteractions(viewActions)
+        // Effect:
+        assertEquals(
+            SelectedShopViewStateResult(
+                name = "No name",
+                url = null,
+                address = "",
+                city = ""
+            ),
+            viewActions.result
+        )
     }
 
     @Test
     fun testSelectedWithDataActions() {
-        // Действие:
+        // Action:
         SelectedShopStateSelected(
             Shop(
                 name = "Super shop",
@@ -121,17 +136,21 @@ class SelectedShopStatesTest {
             )
         ).apply(viewActions)
 
-        // Результат:
-        verify(viewActions).setName("Super shop")
-        verify(viewActions).setPicture("url")
-        verify(viewActions).setStreet("street")
-        verify(viewActions).setCity("city")
-        verifyNoMoreInteractions(viewActions)
+        // Effect:
+        assertEquals(
+            SelectedShopViewStateResult(
+                name = "Super shop",
+                url = "url",
+                address = "street",
+                city = "city"
+            ),
+            viewActions.result
+        )
     }
 
     @Test
     fun testSelectedWithStreet2DataActions() {
-        // Действие:
+        // Action:
         SelectedShopStateSelected(
             Shop(
                 name = "Super shop",
@@ -140,12 +159,16 @@ class SelectedShopStatesTest {
             )
         ).apply(viewActions)
 
-        // Результат:
-        verify(viewActions).setName("Super shop")
-        verify(viewActions).setPicture("url")
-        verify(viewActions).setStreet("street 2")
-        verify(viewActions).setCity("city")
-        verifyNoMoreInteractions(viewActions)
+        // Effect:
+        assertEquals(
+            SelectedShopViewStateResult(
+                name = "Super shop",
+                url = "url",
+                address = "street 2",
+                city = "city"
+            ),
+            viewActions.result
+        )
     }
 
     @Test
@@ -162,14 +185,45 @@ class SelectedShopStatesTest {
 
     @Test
     fun testNotSelectedActions() {
-        // Действие:
-        SelectedShopStateNotSelected().apply(viewActions)
+        // Action:
+        SelectedShopStateNotSelected.apply(viewActions)
 
-        // Результат:
-        verify(viewActions).setName("Not selected")
-        verify(viewActions).setPicture(null)
-        verify(viewActions).setCity("")
-        verify(viewActions).setStreet("")
-        verifyNoMoreInteractions(viewActions)
+        // Effect:
+        assertEquals(
+            SelectedShopViewStateResult(
+                name = "Not selected",
+                url = null,
+                address = "",
+                city = ""
+            ),
+            viewActions.result
+        )
+    }
+}
+
+data class SelectedShopViewStateResult(
+    var name: String? = null,
+    var url: String? = null,
+    var address: String? = null,
+    var city: String? = null
+)
+
+class SelectedShopViewActionsMock : SelectedShopViewActions {
+    var result = SelectedShopViewStateResult()
+
+    override fun setName(name: String) {
+        result = result.copy(name = name)
+    }
+
+    override fun setPicture(url: String?) {
+        result = result.copy(url = url)
+    }
+
+    override fun setStreet(address: String) {
+        result = result.copy(address = address)
+    }
+
+    override fun setCity(city: String) {
+        result = result.copy(city = city)
     }
 }

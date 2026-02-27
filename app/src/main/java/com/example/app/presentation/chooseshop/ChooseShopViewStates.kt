@@ -13,7 +13,7 @@ data class ChooseShopViewStateError(val errorMessage: String) :
     }
 }
 
-class ChooseShopViewStatePending : ViewState<ChooseShopViewActions> {
+object ChooseShopViewStatePending : ViewState<ChooseShopViewActions> {
     override fun apply(actions: ChooseShopViewActions) {
         actions.showShopList(false)
         actions.showShopListErrorMessage(false)

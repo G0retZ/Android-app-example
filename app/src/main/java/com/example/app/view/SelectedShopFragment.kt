@@ -7,7 +7,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.transition.Transition
 import androidx.transition.TransitionInflater
 import androidx.transition.TransitionListenerAdapter
@@ -20,6 +22,7 @@ import com.example.app.databinding.FragmentSelectedShopBinding
 import com.example.app.inject
 import com.example.app.presentation.selectedshop.SelectedShopViewActions
 import com.example.app.presentation.selectedshop.SelectedShopViewModel
+import kotlinx.coroutines.launch
 
 class SelectedShopFragment : Fragment(), SelectedShopViewActions {
 
@@ -85,15 +88,18 @@ class SelectedShopFragment : Fragment(), SelectedShopViewActions {
                     resources.displayMetrics.density * 128,
                     listOf(binding.accept, binding.gradient)
                 )
-                selectionViewModel
-                    .viewStateLiveData
-                    .observe(
-                        viewLifecycleOwner,
-                        Observer { it?.apply(this) })
-
-                selectionViewModel
-                    .navigationLiveData
-                    .observe(viewLifecycleOwner, Observer(navigator::navigate))
+                viewLifecycleOwner.lifecycleScope.launch {
+                    repeatOnLifecycle(Lifecycle.State.STARTED) {
+                        launch {
+                            selectionViewModel
+                                .viewStates
+                                .collect { it.apply(this@SelectedShopFragment) }
+                        }
+                        selectionViewModel
+                            .navigation
+                            .collect(navigator::navigate)
+                    }
+                }
             }
 
     override fun onDestroyView() = super.onDestroyView()

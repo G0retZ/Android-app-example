@@ -4,29 +4,28 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Before
 import org.junit.Test
-import org.mockito.ArgumentMatchers.eq
-import org.mockito.ArgumentMatchers.isNull
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyNoMoreInteractions
 
 class ShopListSelectionStatesTest {
-    private lateinit var viewActions: ShopListSelectionViewActions
+    private lateinit var viewActions: ShopListSelectionViewActionsMock
 
     @Before
     fun setUp() {
-        viewActions = mock(ShopListSelectionViewActions::class.java)
+        viewActions = ShopListSelectionViewActionsMock()
     }
 
     @Test
     fun testSelectedActions() {
-        // Действие:
+        // Action:
         ShopListSelectionStateSelected(2).apply(viewActions)
 
-        // Результат:
-        verify(viewActions).showAcceptButton(eq(true))
-        verify(viewActions).showSelectedIndex(eq(2))
-        verifyNoMoreInteractions(viewActions)
+        // Effect:
+        assertEquals(
+            ShopListSelectionViewStateResult(
+                showAcceptButton = true,
+                selectedIndex = 2
+            ),
+            viewActions.result
+        )
     }
 
     @Test
@@ -37,12 +36,34 @@ class ShopListSelectionStatesTest {
 
     @Test
     fun testNotSelectedActions() {
-        // Действие:
-        ShopListSelectionStateNotSelected().apply(viewActions)
+        // Action:
+        ShopListSelectionStateNotSelected.apply(viewActions)
 
-        // Результат:
-        verify(viewActions).showAcceptButton(eq(false))
-        verify(viewActions).showSelectedIndex(isNull())
-        verifyNoMoreInteractions(viewActions)
+        // Effect:
+        assertEquals(
+            ShopListSelectionViewStateResult(
+                showAcceptButton = false,
+                selectedIndex = null
+            ),
+            viewActions.result
+        )
+    }
+}
+
+data class ShopListSelectionViewStateResult(
+    val showAcceptButton: Boolean = false,
+    val selectedIndex: Int? = null
+)
+
+class ShopListSelectionViewActionsMock : ShopListSelectionViewActions {
+    var result: ShopListSelectionViewStateResult = ShopListSelectionViewStateResult()
+        private set
+
+    override fun showAcceptButton(show: Boolean) {
+        result = result.copy(showAcceptButton = show)
+    }
+
+    override fun showSelectedIndex(index: Int?) {
+        result = result.copy(selectedIndex = index)
     }
 }

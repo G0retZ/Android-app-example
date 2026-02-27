@@ -1,9 +1,7 @@
 package com.example.app
 
 import androidx.lifecycle.ViewModelProvider
-import com.example.app.interactor.BrandShopsUseCaseImpl
-import com.example.app.interactor.SelectedShopSharer
-import com.example.app.interactor.ShopChoiceSharer
+import com.example.app.backend.DispatchedLocationsApi
 import com.example.app.presentation.ViewModelFactory
 import com.example.app.presentation.chooseshop.ChooseShopViewModel
 import com.example.app.presentation.chooseshop.ChooseShopViewModelImpl
@@ -15,9 +13,9 @@ import com.example.app.view.ChooseShopFragment
 import com.example.app.view.SelectedShopFragment
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import kotlinx.coroutines.flow.MutableStateFlow
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 
 fun inject(fragment: ChooseShopFragment) {
@@ -25,7 +23,7 @@ fun inject(fragment: ChooseShopFragment) {
     fragment.chooseShopViewModel =
         ViewModelProvider(
             fragment,
-            ViewModelFactory<ChooseShopViewModel>(ChooseShopViewModelImpl(brandShopsUseCase))
+            ViewModelFactory<ChooseShopViewModel>(ChooseShopViewModelImpl(brandShops))
         ).get(
             ChooseShopViewModelImpl::class.java
         )
@@ -33,7 +31,7 @@ fun inject(fragment: ChooseShopFragment) {
         ViewModelProvider(
             fragment,
             ViewModelFactory<ShopListSelectionViewModel>(
-                ShopListSelectionViewModelImpl(selectionSharer)
+                ShopListSelectionViewModelImpl(indexSelection)
             )
         ).get(
             ShopListSelectionViewModelImpl::class.java
@@ -45,7 +43,7 @@ fun inject(fragment: SelectedShopFragment) {
     fragment.selectionViewModel =
         ViewModelProvider(
             fragment,
-            ViewModelFactory<SelectedShopViewModel>(SelectedShopViewModelImpl(selectedShopSharer))
+            ViewModelFactory<SelectedShopViewModel>(SelectedShopViewModelImpl(shopSelection))
         ).get(
             SelectedShopViewModelImpl::class.java
         )
@@ -66,20 +64,26 @@ val okHttpClient by lazy {
 }
 
 val api: LocationsApi by lazy {
-
-    Retrofit.Builder()
-        .addConverterFactory(GsonConverterFactory.create(gson))
-        .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-        .client(okHttpClient)
-        .baseUrl("https://api-staging-1.getsquire.com/v1/")
-        .build()
-        .create(LocationsApi::class.java)
+    DispatchedLocationsApi(
+        Retrofit.Builder()
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .client(okHttpClient)
+            .baseUrl("https://api-staging-1.getsquire.com/v1/")
+            .build()
+            .create(LocationsApi::class.java)
+    )
 }
 
-val selectionSharer by lazy(::ShopChoiceSharer)
+val indexSelection by lazy { MutableStateFlow(-1) }
 
-val selectedShopSharer by lazy(::SelectedShopSharer)
+val shopSelection by lazy { MutableStateFlow<Shop?>(null) }
 
-val brandShopsUseCase by lazy {
-    BrandShopsUseCaseImpl(api, selectionSharer, selectedShopSharer)
+val brandShops by lazy {
+    DispatchedBrandShops(
+        brandShops = BrandShopsImpl(
+            api = api,
+            currentSelectionIndex = ToggleIndexSelection(indexSelection),
+            currentSelectionShop = ToggleShopSelection(shopSelection)
+        )
+    )
 }

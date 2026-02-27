@@ -1,168 +1,205 @@
 package com.example.app.presentation.chooseshop
 
-import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import androidx.lifecycle.Observer
+import com.example.app.BrandShops
+import com.example.app.MainCoroutineRule
 import com.example.app.Shop
-import com.example.app.ViewModelThreadTestRule
-import com.example.app.interactor.BrandShopsUseCase
 import com.example.app.presentation.ViewState
-import io.reactivex.Completable
-import io.reactivex.Single
-import io.reactivex.subjects.SingleSubject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Before
-import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TestRule
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.isA
-import org.mockito.Mock
-import org.mockito.Mockito
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyNoMoreInteractions
-import org.mockito.MockitoAnnotations
 import java.io.IOException
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ChooseShopViewModelTest {
 
-    @Rule
-    @JvmField
-    var rule: TestRule = InstantTaskExecutorRule()
+    @ExperimentalCoroutinesApi
+    @get:Rule
+    var mainCoroutineRule = MainCoroutineRule()
 
     private lateinit var viewModel: ChooseShopViewModel
-
-    @Mock
-    private lateinit var brandShopsUseCase: BrandShopsUseCase
-
-    @Mock
-    private lateinit var viewStateObserver: Observer<ViewState<ChooseShopViewActions>>
-
-    @Mock
-    private lateinit var navigateObserver: Observer<String>
-
-    private lateinit var shopSingleSubject: SingleSubject<List<Shop>>
+    private lateinit var brandShops: BrandShopsMock
+    private lateinit var continuation: Continuation<List<Shop>>
+    private lateinit var selectionContinuation: Continuation<Unit>
 
     @Before
     fun setUp() {
-        MockitoAnnotations.openMocks(this)
-        shopSingleSubject = SingleSubject.create<List<Shop>>()
-        Mockito.`when`(brandShopsUseCase.brandShops)
-            .thenReturn(shopSingleSubject)
-        Mockito.`when`(brandShopsUseCase.selectShopAt(anyInt()))
-            .thenReturn(Completable.never())
-        viewModel = ChooseShopViewModelImpl(brandShopsUseCase)
+        brandShops = BrandShopsMock(
+            capture = { continuation = it },
+            selectionCapture = { selectionContinuation = it }
+        )
     }
 
     /* Check interactions работу with use case. */
+    @Suppress("UnusedFlow")
     @Test
-    fun shouldAskUseCaseForDataInitially() {
-        // Effect:
-        verify(brandShopsUseCase, Mockito.only()).brandShops
-    }
-
-    @Test
-    fun shouldNotTouchUseCaseOnSubscriptions() {
-        // Action:
-        shopSingleSubject.onSuccess(
-            listOf(Shop(id = "1"), Shop(id = "2"), Shop(id = "3"), Shop(id = "4"))
-        )
-        viewModel.navigationLiveData
-        viewModel.viewStateLiveData
-        viewModel.navigationLiveData
-        viewModel.viewStateLiveData
-
-        // Effect:
-        verify(brandShopsUseCase, Mockito.only()).brandShops
-    }
-
-    @Test
-    fun shouldAskUseCaseToSelectByIndex() {
+    fun shouldNotTouchUseCaseOnSubscriptions() = runTest {
         // Given:
-        Mockito.`when`(brandShopsUseCase.selectShopAt(anyInt()))
-            .thenReturn(Completable.complete())
+        viewModel = ChooseShopViewModelImpl(brandShops)
 
         // Action:
-        viewModel.selectItem(-1)
-        viewModel.selectItem(2)
-        viewModel.selectItem(3)
+        advanceUntilIdle()
+        continuation.resume(
+            listOf(
+                Shop(id = "1"),
+                Shop(id = "2"),
+                Shop(id = "3"),
+                Shop(id = "4")
+            )
+        )
+        advanceUntilIdle()
+        viewModel.navigation
+        viewModel.viewStates
+        viewModel.navigation
+        viewModel.viewStates
 
         // Effect:
-        verify(brandShopsUseCase).brandShops
-        verify(brandShopsUseCase).selectShopAt(-1)
-        verify(brandShopsUseCase).selectShopAt(2)
-        verify(brandShopsUseCase).selectShopAt(3)
-        verifyNoMoreInteractions(brandShopsUseCase)
+        assertEquals(1, brandShops.brandShopsCallCount)
+        assertEquals(emptyList<Int>(), brandShops.selectShopCallArgs)
     }
 
     @Test
-    fun shouldNotTouchUseCaseDuringSelection() {
+    fun shouldAskUseCaseToSelectByIndex() = runTest {
+        // Given:
+        viewModel = ChooseShopViewModelImpl(brandShops)
+
         // Action:
+        advanceUntilIdle()
+        continuation.resume(emptyList())
+        advanceUntilIdle()
         viewModel.selectItem(-1)
+        advanceUntilIdle()
+        selectionContinuation.resume(Unit)
+        advanceUntilIdle()
         viewModel.selectItem(2)
+        advanceUntilIdle()
+        selectionContinuation.resume(Unit)
+        advanceUntilIdle()
         viewModel.selectItem(3)
+        advanceUntilIdle()
+        selectionContinuation.resume(Unit)
+        advanceUntilIdle()
 
         // Effect:
-        verify(brandShopsUseCase).brandShops
-        verify(brandShopsUseCase).selectShopAt(-1)
-        verifyNoMoreInteractions(brandShopsUseCase)
+        assertEquals(1, brandShops.brandShopsCallCount)
+        assertEquals(listOf(-1, 2, 3), brandShops.selectShopCallArgs)
+    }
+
+    @Test
+    fun shouldNotTouchUseCaseDuringReload() = runTest {
+        // Given:
+        viewModel = ChooseShopViewModelImpl(brandShops)
+
+        // Action:
+        advanceUntilIdle()
+        viewModel.selectItem(-1)
+        advanceUntilIdle()
+        viewModel.selectItem(2)
+        advanceUntilIdle()
+        viewModel.selectItem(3)
+        advanceUntilIdle()
+        continuation.resume(emptyList())
+        advanceUntilIdle()
+
+        // Effect:
+        assertEquals(1, brandShops.brandShopsCallCount)
+        assertEquals(emptyList<Int>(), brandShops.selectShopCallArgs)
+    }
+
+    @Test
+    fun shouldNotTouchUseCaseDuringSelection() = runTest {
+        // Given:
+        viewModel = ChooseShopViewModelImpl(brandShops)
+
+        // Action:
+        advanceUntilIdle()
+        continuation.resume(emptyList())
+        advanceUntilIdle()
+        viewModel.selectItem(-1)
+        advanceUntilIdle()
+        viewModel.selectItem(2)
+        advanceUntilIdle()
+        viewModel.selectItem(3)
+        advanceUntilIdle()
+        selectionContinuation.resume(Unit)
+        advanceUntilIdle()
+
+        // Effect:
+        assertEquals(1, brandShops.brandShopsCallCount)
+        assertEquals(listOf(-1), brandShops.selectShopCallArgs)
     }
 
     /* Check view state switching. */
     @Test
-    fun shouldSetPendingViewStateToLiveDataInitially() {
+    fun shouldSetPendingViewStateToViewStatesInitially() = runTest {
         // Given:
-        val inOrder = Mockito.inOrder(viewStateObserver)
+        val result = mutableListOf<ViewState<ChooseShopViewActions>>()
+        viewModel = ChooseShopViewModelImpl(brandShops)
 
         // Action:
-        viewModel.viewStateLiveData.observeForever(viewStateObserver)
+        val job = viewModel.viewStates.onEach(result::add).launchIn(this)
+        advanceUntilIdle()
 
         // Effect:
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                isA(ChooseShopViewStatePending::class.java)
-            )
-        verifyNoMoreInteractions(viewStateObserver)
+        assertEquals(listOf(ChooseShopViewStatePending), result)
+        job.cancel()
     }
 
     @Test
-    fun shouldSetErrorViewStateToLiveData() {
+    fun shouldSetErrorViewStateToViewStates() = runTest {
         // Given:
-        val inOrder = Mockito.inOrder(viewStateObserver)
-        viewModel.viewStateLiveData.observeForever(viewStateObserver)
+        val result = mutableListOf<ViewState<ChooseShopViewActions>>()
+        viewModel = ChooseShopViewModelImpl(brandShops)
+        val job = viewModel.viewStates.onEach(result::add).launchIn(this)
 
         // Action:
-        shopSingleSubject.onError(IOException("Error"))
+        advanceUntilIdle()
+        continuation.resumeWithException(IOException("Error"))
+        advanceUntilIdle()
 
         // Effect:
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                isA(ChooseShopViewStatePending::class.java)
-            )
-        inOrder.verify(viewStateObserver)
-            .onChanged(
+        assertEquals(
+            listOf(
+                ChooseShopViewStatePending,
                 ChooseShopViewStateError("Error")
-            )
-        verifyNoMoreInteractions(viewStateObserver)
+            ),
+            result
+        )
+        job.cancel()
     }
 
     @Test
-    fun shouldSetReadyViewStateWitchCorrectListToLiveData() {
+    fun shouldSetReadyViewStateWitchCorrectListToViewStates() = runTest {
         // Given:
-        val inOrder = Mockito.inOrder(viewStateObserver)
-        viewModel.viewStateLiveData.observeForever(viewStateObserver)
+        val result = mutableListOf<ViewState<ChooseShopViewActions>>()
+        viewModel = ChooseShopViewModelImpl(brandShops)
+        val job = viewModel.viewStates.onEach(result::add).launchIn(this)
 
         // Action:
-        shopSingleSubject.onSuccess(
-            listOf(Shop(id = "1"), Shop(id = "2"), Shop(id = "3"), Shop(id = "4"))
+        advanceUntilIdle()
+        continuation.resume(
+            listOf(
+                Shop(id = "1"),
+                Shop(id = "2"),
+                Shop(id = "3"),
+                Shop(id = "4")
+            )
         )
+        advanceUntilIdle()
 
         // Effect:
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                isA(ChooseShopViewStatePending::class.java)
-            )
-        inOrder.verify(viewStateObserver)
-            .onChanged(
+        assertEquals(
+            listOf(
+                ChooseShopViewStatePending,
                 ChooseShopViewStateReady(
                     listOf(
                         ChooseShopListItem(Shop(id = "1")),
@@ -171,108 +208,128 @@ class ChooseShopViewModelTest {
                         ChooseShopListItem(Shop(id = "4"))
                     )
                 )
-            )
-        verifyNoMoreInteractions(viewStateObserver)
+            ),
+            result
+        )
+        job.cancel()
     }
 
     @Test
-    fun shouldSetPendingViewStateToLiveDataOnRetry() {
+    fun shouldSetPendingViewStateToViewStatesOnRetry() = runTest {
         // Given:
-        val inOrder = Mockito.inOrder(viewStateObserver)
-        viewModel.viewStateLiveData.observeForever(viewStateObserver)
+        val result = mutableListOf<ViewState<ChooseShopViewActions>>()
+        viewModel = ChooseShopViewModelImpl(brandShops)
+        val job = viewModel.viewStates.onEach(result::add).launchIn(this)
 
         // Action:
-        shopSingleSubject.onError(IOException("Error"))
-        Mockito.`when`(brandShopsUseCase.brandShops).thenReturn(Single.never())
+        advanceUntilIdle()
+        continuation.resumeWithException(IOException("Error"))
+        advanceUntilIdle()
         viewModel.reloadShops()
+        advanceUntilIdle()
 
         // Effect:
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                isA(ChooseShopViewStatePending::class.java)
-            )
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                ChooseShopViewStateError("Error")
-            )
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                isA(ChooseShopViewStatePending::class.java)
-            )
-        verifyNoMoreInteractions(viewStateObserver)
+        assertEquals(
+            listOf(
+                ChooseShopViewStatePending,
+                ChooseShopViewStateError("Error"),
+                ChooseShopViewStatePending
+            ),
+            result
+        )
+        job.cancel()
     }
 
     @Test
-    fun shouldSetErrorViewStateToLiveDataOnSelectionFailure() {
+    fun shouldSetErrorViewStateToViewStatesOnSelectionFailure() = runTest {
         // Given:
-        val inOrder = Mockito.inOrder(viewStateObserver)
-        Mockito.`when`(brandShopsUseCase.selectShopAt(anyInt()))
-            .thenReturn(Completable.error(IndexOutOfBoundsException("Error 2")))
-        viewModel.viewStateLiveData.observeForever(viewStateObserver)
+        val result = mutableListOf<ViewState<ChooseShopViewActions>>()
+        viewModel = ChooseShopViewModelImpl(brandShops)
+        val job = viewModel.viewStates.onEach(result::add).launchIn(this)
 
         // Action:
-        shopSingleSubject.onSuccess(listOf())
+        advanceUntilIdle()
+        continuation.resume(emptyList())
+        advanceUntilIdle()
         viewModel.selectItem(-1)
+        advanceUntilIdle()
+        selectionContinuation.resumeWithException(IndexOutOfBoundsException("Error 2"))
+        advanceUntilIdle()
 
         // Effect:
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                isA(ChooseShopViewStatePending::class.java)
-            )
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                ChooseShopViewStateReady(listOf())
-            )
-        inOrder.verify(viewStateObserver)
-            .onChanged(
+        assertEquals(
+            listOf(
+                ChooseShopViewStatePending,
+                ChooseShopViewStateReady(listOf()),
                 ChooseShopViewStateError("Error 2")
-            )
-        verifyNoMoreInteractions(viewStateObserver)
+            ),
+            result
+        )
+        job.cancel()
     }
 
     @Test
-    fun shouldNoSetOtherViewStateToLiveDataOnSelectionSuccess() {
+    fun shouldNotSetOtherViewStateToViewStatesOnSelectionSuccess() = runTest {
         // Given:
-        val inOrder = Mockito.inOrder(viewStateObserver)
-        Mockito.`when`(brandShopsUseCase.selectShopAt(anyInt()))
-            .thenReturn(Completable.complete())
-        viewModel.viewStateLiveData.observeForever(viewStateObserver)
+        val result = mutableListOf<ViewState<ChooseShopViewActions>>()
+        viewModel = ChooseShopViewModelImpl(brandShops)
+        val job = viewModel.viewStates.onEach(result::add).launchIn(this)
 
         // Action:
-        shopSingleSubject.onSuccess(listOf())
+        advanceUntilIdle()
+        continuation.resume(emptyList())
+        advanceUntilIdle()
         viewModel.selectItem(-1)
+        advanceUntilIdle()
+        selectionContinuation.resume(Unit)
+        advanceUntilIdle()
 
         // Effect:
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                isA(ChooseShopViewStatePending::class.java)
-            )
-        inOrder.verify(viewStateObserver)
-            .onChanged(
+        assertEquals(
+            listOf(
+                ChooseShopViewStatePending,
                 ChooseShopViewStateReady(listOf())
-            )
-        verifyNoMoreInteractions(viewStateObserver)
+            ),
+            result
+        )
+        job.cancel()
     }
 
     /* Check navigation */
     @Test
-    fun setNavigateToCloseSelectionDetailsOnClose() {
+    fun setNavigateToCloseSelectionDetailsOnClose() = runTest {
         // Given:
-        viewModel.navigationLiveData.observeForever(navigateObserver)
+        val result = mutableListOf<String>()
+        viewModel = ChooseShopViewModelImpl(brandShops)
+        val job = viewModel.navigation.onEach(result::add).launchIn(this)
 
         // Action:
+        advanceUntilIdle()
         viewModel.close()
+        advanceUntilIdle()
 
         // Effect:
-        verify(
-            navigateObserver,
-            Mockito.only()
-        ).onChanged(CLOSE_CHOOSE_SHOP)
+        assertEquals(listOf(CLOSE_CHOOSE_SHOP), result)
+        job.cancel()
+    }
+}
+
+class BrandShopsMock(
+    private val capture: Function1<Continuation<List<Shop>>, Unit>,
+    private val selectionCapture: Function1<Continuation<Unit>, Unit>
+) : BrandShops {
+    var brandShopsCallCount = 0
+        private set
+    var selectShopCallArgs = mutableListOf<Int>()
+        private set
+
+    override suspend fun getBrandShops(): List<Shop> = suspendCancellableCoroutine {
+        brandShopsCallCount++
+        capture(it)
     }
 
-    companion object {
-        @ClassRule
-        @JvmField
-        val classRule: ViewModelThreadTestRule = ViewModelThreadTestRule()
+    override suspend fun selectShopAt(selection: Int) = suspendCancellableCoroutine {
+        selectShopCallArgs.add(selection)
+        selectionCapture(it)
     }
 }

@@ -1,14 +1,14 @@
 package com.example.app.presentation.chooseshop
 
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
+import com.example.app.BrandShops
 import com.example.app.Shop
-import com.example.app.interactor.BrandShopsUseCase
-import com.example.app.presentation.SingleLiveEvent
 import com.example.app.presentation.ViewModel
 import com.example.app.presentation.ViewState
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
-import io.reactivex.disposables.Disposables
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel of shops list view.
@@ -24,51 +24,59 @@ interface ChooseShopViewModel : ViewModel<ChooseShopViewActions, String> {
     fun close()
 }
 
-class ChooseShopViewModelImpl(private val brandShopsUseCase: BrandShopsUseCase) :
+class ChooseShopViewModelImpl(private val brandShops: BrandShops) :
     androidx.lifecycle.ViewModel(), ChooseShopViewModel {
 
-    override val viewStateLiveData = MutableLiveData<ViewState<ChooseShopViewActions>>()
-    override val navigationLiveData: SingleLiveEvent<String> = SingleLiveEvent()
-    private var shopsDisposable: Disposable = Disposables.disposed()
-    private var choiceDisposable: Disposable = Disposables.disposed()
+    override val viewStates =
+        MutableStateFlow<ViewState<ChooseShopViewActions>>(ChooseShopViewStatePending)
+    override val navigation = MutableSharedFlow<String>()
+    private var job: Job = Job().apply { cancel() }
 
     init {
         reloadShops()
     }
 
     override fun selectItem(index: Int) {
-        if (choiceDisposable.isDisposed) {
-            choiceDisposable = brandShopsUseCase.selectShopAt(index)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ }, this::consumeError)
+        if (!job.isActive) {
+            job = viewModelScope.launch {
+                try {
+                    brandShops.selectShopAt(index)
+                } catch (error: Throwable) {
+                    consumeError(error)
+                }
+            }
         }
     }
 
     override fun reloadShops() {
-        if (shopsDisposable.isDisposed) {
-            viewStateLiveData.postValue(ChooseShopViewStatePending())
-            shopsDisposable = brandShopsUseCase.brandShops
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::consumeShops, this::consumeError)
+        if (!job.isActive) {
+            job = viewModelScope.launch {
+                viewStates.emit(ChooseShopViewStatePending)
+                try {
+                    consumeShops(brandShops.getBrandShops())
+                } catch (error: Throwable) {
+                    consumeError(error)
+                }
+            }
         }
     }
 
     override fun close() {
-        navigationLiveData.postValue(CLOSE_CHOOSE_SHOP)
+        viewModelScope.launch {
+            navigation.emit(CLOSE_CHOOSE_SHOP)
+        }
     }
 
-    private fun consumeShops(vehicles: List<Shop>) = viewStateLiveData.postValue(
+    private suspend fun consumeShops(shops: List<Shop>) = viewStates.emit(
         ChooseShopViewStateReady(
-            vehicles.map(::ChooseShopListItem)
+            shops.map(::ChooseShopListItem)
         )
     )
 
-    private fun consumeError(error: Throwable) = viewStateLiveData.postValue(
+    private suspend fun consumeError(error: Throwable) = viewStates.emit(
         ChooseShopViewStateError(error.message ?: "Something went wrong")
     )
 
-    override fun onCleared() = super.onCleared().also {
-        shopsDisposable.dispose()
-        choiceDisposable.dispose()
-    }
+    override fun onCleared() = super.onCleared()
+        .also { job.cancel() }
 }

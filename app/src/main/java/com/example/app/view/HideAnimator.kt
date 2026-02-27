@@ -79,13 +79,13 @@ class HideAnimator(
             .apply {
                 playTogether(
                     views
-                    .map {
-                        listOf(
-                            ObjectAnimator.ofFloat(it, View.ALPHA, alpha),
-                            ObjectAnimator.ofFloat(it, View.TRANSLATION_Y, yDistance)
-                        )
-                    }
-                    .flatten()
+                        .map {
+                            listOf(
+                                ObjectAnimator.ofFloat(it, View.ALPHA, alpha),
+                                ObjectAnimator.ofFloat(it, View.TRANSLATION_Y, yDistance)
+                            )
+                        }
+                        .flatten()
                 )
                 duration = 200
                 interpolator = interpol

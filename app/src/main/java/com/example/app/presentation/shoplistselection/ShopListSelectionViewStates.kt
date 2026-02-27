@@ -10,7 +10,7 @@ data class ShopListSelectionStateSelected(val index: Int) :
     }
 }
 
-class ShopListSelectionStateNotSelected : ViewState<ShopListSelectionViewActions> {
+object ShopListSelectionStateNotSelected : ViewState<ShopListSelectionViewActions> {
     override fun apply(actions: ShopListSelectionViewActions) {
         actions.showSelectedIndex(null)
         actions.showAcceptButton(false)

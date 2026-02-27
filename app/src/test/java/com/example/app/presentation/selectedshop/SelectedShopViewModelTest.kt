@@ -1,192 +1,139 @@
 package com.example.app.presentation.selectedshop
 
-import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import androidx.lifecycle.Observer
+import com.example.app.MainCoroutineRule
 import com.example.app.Shop
-import com.example.app.ViewModelThreadTestRule
-import com.example.app.interactor.DataReceiver
 import com.example.app.presentation.ViewState
-import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Before
-import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TestRule
-import org.mockito.ArgumentMatchers
-import org.mockito.ArgumentMatchers.isA
-import org.mockito.Mock
-import org.mockito.Mockito
-import org.mockito.Mockito.verify
-import org.mockito.MockitoAnnotations
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SelectedShopViewModelTest {
 
-    @Rule
-    @JvmField
-    var rule: TestRule = InstantTaskExecutorRule()
+    @ExperimentalCoroutinesApi
+    @get:Rule
+    var mainCoroutineRule = MainCoroutineRule()
 
-    private lateinit var viewModel: SelectedShopViewModel
-
-    @Mock
-    private lateinit var useCase: DataReceiver<Shop>
-
-    @Mock
-    private lateinit var viewStateObserver: Observer<ViewState<SelectedShopViewActions>>
-
-    @Mock
-    private lateinit var navigateObserver: Observer<String>
-
-    private lateinit var selectionSubject: PublishSubject<Shop>
+    private lateinit var selectionFlow: MutableSharedFlow<Shop?>
 
     @Before
     fun setUp() {
-        MockitoAnnotations.openMocks(this)
-        selectionSubject = PublishSubject.create()
-        Mockito.`when`(useCase.get()).thenReturn(selectionSubject)
-        viewModel = SelectedShopViewModelImpl(useCase)
-    }
-
-    /* Check interactions with use case. */
-    @Test
-    fun shouldAskUseCaseForDataInitially() {
-        // Effect:
-        verify(useCase, Mockito.only()).get()
-    }
-
-    @Test
-    fun shouldAskUseCaseForDataOnReSubscriptions() {
-        // Given:
-        Mockito.`when`(useCase.get())
-            .thenReturn(Observable.empty(), Observable.empty(), Observable.never())
-
-        // Action:
-        selectionSubject.onComplete()
-
-        // Effect:
-        verify(useCase, Mockito.times(4)).get()
-    }
-
-    @Test
-    fun shouldNotTouchUseCaseOnSubscriptions() {
-        // Action:
-        selectionSubject.onNext(Shop(id = "2"))
-        selectionSubject.onNext(Shop(id = "3"))
-        viewModel.navigationLiveData
-        viewModel.viewStateLiveData
-        viewModel.navigationLiveData
-        viewModel.viewStateLiveData
-
-        // Effect:
-        verify(useCase, Mockito.only()).get()
+        selectionFlow = MutableSharedFlow()
     }
 
     /* Check view state switching. */
     @Test
-    fun shouldSetNotSelectedViewStateToLiveDataInitially() {
+    fun shouldSetNotSelectedViewStateToViewStatesInitially() = runTest {
         // Given:
-        val inOrder = Mockito.inOrder(viewStateObserver)
+        val result = mutableListOf<ViewState<SelectedShopViewActions>>()
+        val viewModel = SelectedShopViewModelImpl(selectionFlow)
 
         // Action:
-        viewModel.viewStateLiveData.observeForever(viewStateObserver)
+        val job = viewModel.viewStates.onEach(result::add).launchIn(this)
+        advanceUntilIdle()
 
         // Effect:
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                ArgumentMatchers.any(SelectedShopStateNotSelected::class.java)
-            )
-        Mockito.verifyNoMoreInteractions(viewStateObserver)
+        assertEquals(listOf(SelectedShopStateNotSelected), result)
+        job.cancel()
     }
 
     @Test
-    fun shouldSetSelectedViewStateToLiveData() {
+    fun shouldSetSelectedViewStateToViewStates() = runTest {
         // Given:
-        val inOrder = Mockito.inOrder(viewStateObserver)
-        viewModel.viewStateLiveData.observeForever(viewStateObserver)
+        val result = mutableListOf<ViewState<SelectedShopViewActions>>()
+        val viewModel = SelectedShopViewModelImpl(selectionFlow)
+        val job = viewModel.viewStates.onEach(result::add).launchIn(this)
 
         // Action:
-        selectionSubject.onNext(Shop(id = "2"))
-        selectionSubject.onNext(Shop(id = "5"))
+        advanceUntilIdle()
+        selectionFlow.emit(Shop(id = "2"))
+        advanceUntilIdle()
+        selectionFlow.emit(Shop(id = "5"))
+        advanceUntilIdle()
 
         // Effect:
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                isA(SelectedShopStateNotSelected::class.java)
-            )
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                SelectedShopStateSelected(Shop(id = "2"))
-            )
-        inOrder.verify(viewStateObserver)
-            .onChanged(
+        assertEquals(
+            listOf(
+                SelectedShopStateNotSelected,
+                SelectedShopStateSelected(Shop(id = "2")),
                 SelectedShopStateSelected(Shop(id = "5"))
-            )
-        Mockito.verifyNoMoreInteractions(viewStateObserver)
+            ),
+            result
+        )
+        job.cancel()
     }
 
     @Test
-    fun shouldSetNotSelectedViewStateToLiveData() {
+    fun shouldSetNotSelectedViewStateToViewStates() = runTest {
         // Given:
-        Mockito.`when`(useCase.get()).thenReturn(Observable.never())
-        val inOrder = Mockito.inOrder(viewStateObserver)
-        viewModel.viewStateLiveData.observeForever(viewStateObserver)
-
+        val result = mutableListOf<ViewState<SelectedShopViewActions>>()
+        val viewModel = SelectedShopViewModelImpl(selectionFlow)
+        val job = viewModel.viewStates.onEach(result::add).launchIn(this)
 
         // Action:
-        selectionSubject.onNext(Shop(id = "2"))
-        selectionSubject.onComplete()
+        advanceUntilIdle()
+        selectionFlow.emit(Shop(id = "2"))
+        advanceUntilIdle()
+        selectionFlow.emit(null)
+        advanceUntilIdle()
 
         // Effect:
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                ArgumentMatchers.any(SelectedShopStateNotSelected::class.java)
-            )
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                SelectedShopStateSelected(Shop(id = "2"))
-            )
-        inOrder.verify(viewStateObserver)
-            .onChanged(
-                ArgumentMatchers.any(SelectedShopStateNotSelected::class.java)
-            )
-        Mockito.verifyNoMoreInteractions(viewStateObserver)
+        assertEquals(
+            listOf(
+                SelectedShopStateNotSelected,
+                SelectedShopStateSelected(Shop(id = "2")),
+                SelectedShopStateNotSelected,
+            ),
+            result
+        )
+        job.cancel()
     }
 
     /* Check navigation */
     @Test
-    fun setNavigateToCloseSelectionDetailsOnClose() {
+    fun setNavigateToCloseSelectionDetailsOnClose() = runTest {
         // Given:
-        viewModel.navigationLiveData.observeForever(navigateObserver)
+        val result = mutableListOf<String>()
+        val viewModel = SelectedShopViewModelImpl(selectionFlow)
+        val job = viewModel.navigation.onEach(result::add).launchIn(this)
 
         // Action:
+        advanceUntilIdle()
         viewModel.close()
+        advanceUntilIdle()
 
         // Effect:
-        verify(
-            navigateObserver,
-            Mockito.only()
-        ).onChanged(CLOSE_SELECTION_DETAILS)
+        assertEquals(
+            listOf(CLOSE_SELECTION_DETAILS),
+            result
+        )
+        job.cancel()
     }
 
     @Test
-    fun setNavigateToCloseSelectionDetailsOnComplete() {
+    fun setNavigateToCloseSelectionDetailsOnComplete() = runTest {
         // Given:
-        Mockito.`when`(useCase.get()).thenReturn(Observable.never())
-        viewModel.navigationLiveData.observeForever(navigateObserver)
+        val result = mutableListOf<String>()
+        val viewModel = SelectedShopViewModelImpl(selectionFlow)
+        val job = viewModel.navigation.onEach(result::add).launchIn(this)
 
         // Action:
-        selectionSubject.onComplete()
+        advanceUntilIdle()
+        selectionFlow.emit(null)
+        advanceUntilIdle()
 
         // Effect:
-        verify(
-            navigateObserver,
-            Mockito.only()
-        ).onChanged(CLOSE_SELECTION_DETAILS)
-    }
-
-    companion object {
-        @ClassRule
-        @JvmField
-        val classRule: ViewModelThreadTestRule = ViewModelThreadTestRule()
+        assertEquals(
+            listOf(CLOSE_SELECTION_DETAILS),
+            result
+        )
+        job.cancel()
     }
 }

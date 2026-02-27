@@ -16,7 +16,7 @@ data class SelectedShopStateSelected(val shop: Shop) :
     }
 }
 
-class SelectedShopStateNotSelected : ViewState<SelectedShopViewActions> {
+object SelectedShopStateNotSelected : ViewState<SelectedShopViewActions> {
     override fun apply(actions: SelectedShopViewActions) {
         actions.setName("Not selected")
         actions.setPicture(null)

@@ -7,7 +7,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.transition.Transition
 import androidx.transition.TransitionInflater
@@ -16,14 +18,13 @@ import com.example.app.Navigator
 import com.example.app.R
 import com.example.app.databinding.FragmentChooseShopBinding
 import com.example.app.inject
-import com.example.app.presentation.ViewState
 import com.example.app.presentation.chooseshop.ChooseShopListItem
 import com.example.app.presentation.chooseshop.ChooseShopViewActions
 import com.example.app.presentation.chooseshop.ChooseShopViewModel
 import com.example.app.presentation.shoplistselection.ShopListSelectionViewActions
 import com.example.app.presentation.shoplistselection.ShopListSelectionViewModel
 import com.google.android.material.snackbar.Snackbar
-import timber.log.Timber
+import kotlinx.coroutines.launch
 
 class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionViewActions {
 
@@ -102,7 +103,6 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
                 binding.recyclerView.layoutManager = LinearLayoutManager(context)
                 binding.recyclerView.adapter = ChooseShopAdapter(listOf()) {}
                 binding.nearby.setOnClickListener {
-                    Timber.d("Nearby clicked!")
                     Snackbar.make(
                         it,
                         "The feature is in progress. Stay tuned",
@@ -121,25 +121,30 @@ class ChooseShopFragment : Fragment(), ChooseShopViewActions, ShopListSelectionV
                     resources.displayMetrics.density * 128,
                     listOf(binding.accept, binding.gradient)
                 )
-                chooseShopViewModel
-                    .viewStateLiveData
-                    .observe(
-                        viewLifecycleOwner,
-                        Observer<ViewState<ChooseShopViewActions>> { it.apply(this) })
-
-                shopSelectionViewModel
-                    .viewStateLiveData
-                    .observe(
-                        viewLifecycleOwner,
-                        Observer<ViewState<ShopListSelectionViewActions>> { it.apply(this) })
-
-                chooseShopViewModel
-                    .navigationLiveData
-                    .observe(viewLifecycleOwner, Observer<String>(navigator::navigate))
-
-                shopSelectionViewModel
-                    .navigationLiveData
-                    .observe(viewLifecycleOwner, Observer<String>(navigator::navigate))
+                viewLifecycleOwner.lifecycleScope.launch {
+                    repeatOnLifecycle(Lifecycle.State.STARTED) {
+                        launch {
+                            chooseShopViewModel
+                                .viewStates
+                                .collect { it.apply(this@ChooseShopFragment) }
+                        }
+                        launch {
+                            shopSelectionViewModel
+                                .viewStates
+                                .collect { it.apply(this@ChooseShopFragment) }
+                        }
+                        launch {
+                            chooseShopViewModel
+                                .navigation
+                                .collect(navigator::navigate)
+                        }
+                        launch {
+                            shopSelectionViewModel
+                                .navigation
+                                .collect(navigator::navigate)
+                        }
+                    }
+                }
             }
 
     override fun onDestroyView() = super.onDestroyView()
